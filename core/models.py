@@ -7,11 +7,16 @@ Enforces:
 4. Pure domain layer with ZERO dependencies on application or infrastructure.
 """
 
-from __future__ import annotations
-
+from datetime import datetime
 import math
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field, root_validator
+
+
+class TemporalParadoxError(ValueError):
+    """Raised when publication/reporting timestamp strictly precedes physical observation/event."""
+
+    pass
 
 
 class GeoCoordinates(BaseModel):
@@ -78,8 +83,62 @@ class MaritimeIncident(BaseModel):
         event_time = values.get("event_time")
         pub_time = values.get("pub_time")
         if event_time is not None and pub_time is not None and pub_time < event_time:
-            raise ValueError(
+            raise TemporalParadoxError(
                 f"Temporal paradox detected: publication timestamp ({pub_time}) "
                 f"is strictly earlier than event occurrence timestamp ({event_time})"
             )
+        return values
+
+
+class CivilianSensorTelemetry(BaseModel):
+    """Verifiable public civilian satellite and oceanographic telemetry."""
+
+    telemetry_id: str = Field(..., min_length=1, description="Unique telemetry identifier")
+    corridor_id: str = Field(
+        default="GOG_BONNY_BRASS_FAIRWAY",
+        description="Corridor identifier (e.g. GOG_BONNY_BRASS_FAIRWAY, 4.0N-4.5N, 6.5E-7.5E)",
+    )
+    observation_timestamp: datetime = Field(
+        ..., description="UTC when satellite/buoy observed the corridor"
+    )
+    publication_timestamp: datetime = Field(
+        ..., description="UTC when public feed released the data"
+    )
+    sar_provider: Literal["GFW_SENTINEL1_SAR"] = "GFW_SENTINEL1_SAR"
+    metocean_provider: Literal["COPERNICUS_ERA5_METOCEAN", "OPEN_METEO_MARINE"] = (
+        "COPERNICUS_ERA5_METOCEAN"
+    )
+    ais_provider: Literal["IMF_PORTWATCH_AIS", "PUBLIC_AISHUB"] = "IMF_PORTWATCH_AIS"
+    significant_wave_height_m: float = Field(
+        ..., ge=0.0, le=25.0, description="Significant Wave Height Hs (meters)"
+    )
+    sar_dark_vessel_ratio: float = Field(
+        ..., ge=0.0, le=1.0, description="Fraction of Sentinel-1 radar targets lacking public AIS"
+    )
+    anchorage_waiting_hours: float = Field(
+        ..., ge=0.0, description="Median vessel loitering/queue duration in fairway approach"
+    )
+    viirs_flaring_continuity_idx: float = Field(
+        default=1.0, ge=0.0, le=1.0, description="NOAA VIIRS Nightfire shortwave IR flaring continuity index"
+    )
+
+    class Config:
+        frozen = True
+
+    @root_validator
+    def validate_temporal_monotonicity(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """Enforce publication_timestamp >= observation_timestamp."""
+        obs = values.get("observation_timestamp")
+        pub = values.get("publication_timestamp")
+        if obs is not None and pub is not None:
+            if isinstance(obs, datetime) and isinstance(pub, datetime):
+                if obs.tzinfo is not None and pub.tzinfo is None:
+                    pub = pub.replace(tzinfo=obs.tzinfo)
+                elif obs.tzinfo is None and pub.tzinfo is not None:
+                    obs = obs.replace(tzinfo=pub.tzinfo)
+            if pub < obs:
+                raise TemporalParadoxError(
+                    f"Temporal paradox detected: publication timestamp ({pub}) "
+                    f"is strictly earlier than observation timestamp ({obs})"
+                )
         return values

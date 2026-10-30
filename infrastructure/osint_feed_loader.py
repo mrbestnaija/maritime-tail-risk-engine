@@ -12,7 +12,7 @@ import hashlib
 import json
 from pathlib import Path
 from typing import Sequence
-from core.models import GeoCoordinates, MaritimeIncident, SeverityInterval
+from core.models import CivilianSensorTelemetry, GeoCoordinates, MaritimeIncident, SeverityInterval
 
 DEFAULT_FAIRWAY_CENTROID_LAT = 4.2250
 DEFAULT_FAIRWAY_CENTROID_LON = 7.0850
@@ -108,3 +108,16 @@ class OSINTFeedLoader:
             incidents.append(incident)
 
         return incidents, dataset_sha256
+
+    @staticmethod
+    def load_civilian_telemetry_from_json(
+        file_path: Path | str,
+    ) -> tuple[list[CivilianSensorTelemetry], str]:
+        """Load civilian telemetry records from JSON file and return (telemetry, dataset_sha256)."""
+        p = Path(file_path)
+        content_bytes = p.read_bytes()
+        dataset_sha256 = hashlib.sha256(content_bytes).hexdigest()
+
+        data = json.loads(content_bytes.decode("utf-8"))
+        telemetry_records = [CivilianSensorTelemetry(**item) for item in data]
+        return telemetry_records, dataset_sha256

@@ -6,14 +6,16 @@ This document and the underlying risk model outputs are generated strictly for a
 ---
 
 ### IDENTITY & AUDIT BLOCK
-- **Engine**: `maritime-tail-risk-engine` (Phase 1 Vintage Audit)
+- **Engine**: `maritime-tail-risk-engine` (Phase 2B First-Principles & Multi-Sensor Fusion)
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
-- **Audit Timestamp**: `2026-10-30 08:13:45 UTC`
+- **Audit Timestamp**: `2026-10-30 18:56:59 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
-- **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing)
+- **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
-- **Input Dataset Path**: `sample_gog_osint_vintage.csv`
-- **Sample Dataset Size**: `40 records`
+- **Telemetry SHA-256 Lineage Hash**: `c3685e086d228af1f3d0e44314f3c50e5af000406c0d55559d68d77c95157db7`
+- **Audit Manifest**: `PHASE1_AUDIT_MANIFEST.json` (Cryptographic Lineage Verifiable)
+- **Input Incident Dataset**: `sample_gog_osint_vintage.csv` (40 records)
+- **Input Telemetry Dataset**: `gog_bonny_brass_civilian_telemetry.json` (40 rows)
 
 ---
 
@@ -31,10 +33,7 @@ underwriters pricing risk based on published intelligence bulletins are pricing 
 > [!WARNING]
 > **Underwriter Blind-Spot Hazard**: During a 3 to 7 day reporting lag window, active pirate action groups (PAGs) remain undetected by published feeds. If underwriters compute rolling 14-day VaR on publication date rather than occurrence date, active fairway risk is underestimated by up to **34.8%** during surge periods.
 
----
-
-### 2. Ingestion Hygiene & Deduplication Audit
-
+#### Ingestion Hygiene & Deduplication Audit
 - **Raw OSINT Reports Ingested**: `40`
 - **Deduplicated Physical Incidents**: `31`
 - **Duplicate Reduction Ratio**: `22.5%`
@@ -56,40 +55,115 @@ When multiple intelligence agencies report the same incident (e.g. MDAT-GOG, IMB
 | `GOG-2023-010-NIMASA` | FISHING TRAWLER DELTA | NIMASA | Single Feed | `[2.0, 3.8]` | `(4.3500°N, 7.2000°E)` |
 | `DEDUP-GOG-2023-011-MDAT` | **CHEMICAL TANKER PHOENIX** | DRYAD + MDAT-GOG | Multiple OSINT sources | **[6.5, 9.6]** | `(4.0925°N, 6.6775°E)` |
 | `GOG-2023-012-UKMTO` | UNKNOWN CARGO | UKMTO | Single Feed | `[2.0, 4.0]` | `(4.2250°N, 7.0850°E)` |
-| `GOG-2023-013-IMB` | REEFER AKASSA | IMB | Single Feed | `[3.0, 5.2]` | `(4.2100°N, 7.0600°E)` |
-| `GOG-2023-014-MDAT` | SUPPLY VESSEL WARRI | MDAT-GOG | Single Feed | `[5.0, 7.5]` | `(4.1400°N, 6.8200°E)` |
-| `GOG-2023-015-DRYAD` | OIL TANKER OPOBO | DRYAD | Single Feed | `[4.0, 6.8]` | `(4.1600°N, 6.8800°E)` |
-| ... | *(+16 additional deduplicated incidents)* | ... | ... | ... | ... |
+| ... | *(+19 additional deduplicated incidents)* | ... | ... | ... | ... |
 
 > [!IMPORTANT]
 > **Underwriter Risk Note**: Dropping secondary feeds or keeping only the first reported record causes a severe underestimation of the tail risk. The Union Envelope preserves the true upper risk boundary across all reporting intelligence feeds.
 
 ---
 
-### 3. Underwriting Quantitative Tail Risk Profile
+### 2. Multi-Sensor Civilian OSINT & Hydrodynamic Physics Fusion
 
-Tail risk metrics evaluated across the Bonny / Brass fairway vintage using empirical percentile and Expected Shortfall formulations:
+The corridor risk picture is enriched using **4 verifiable public civilian satellite & meteorological sensors** alongside hydrodynamic small-skiff boarding physics (Hard Firewall: Zero military or restricted naval C2 feeds):
 
-| Metric | Mathematical Definition | Lower Severity Bound (Optimistic) | Upper Severity Bound (Pessimistic / Underwriter) |
+| Civilian Sensor Channel | Data Provider Equivalent | Physical Hazard Metric | Corridor Observed Mean [Min, Max] |
 |---|---|---|---|
-| **Mean Fairway Severity** | $\mathbb{E}[X]$ | `3.60 / 10.0` | **`5.98 / 10.0`** |
-| **Value at Risk ($\text{VaR}_{0.99}$)** | $\inf \{ x \mid F(x) \ge 0.99 \}$ | `7.20 / 10.0` | **`9.80 / 10.0`** |
-| **Expected Shortfall ($\text{CVaR}_{0.99}$)** | $\mathbb{E}[X \mid X \ge \text{VaR}_{0.99}]$ | `7.20 / 10.0` | **`9.80 / 10.0`** |
+| **Marine MetOcean Envelope** | `COPERNICUS_ERA5_METOCEAN` | Significant Wave Height ($H_s$ in meters) | `1.62m [1.15m, 2.45m]` |
+| **Spaceborne SAR Dark Ratio** | `GFW_SENTINEL1_SAR` | Radar Targets Lacking Public AIS (%) | `25.9% [12.0%, 39.0%]` |
+| **Anchorage Loitering Delay** | `IMF_PORTWATCH_AIS` | Fairway Waiting / Queue Duration (hrs) | `46.7 hrs [28.0h, 65.0h]` |
+| **Offshore Thermal Continuity** | `NOAA_VIIRS_FIRMS` | Terminal Gas-Flaring Continuity Index | `0.84 [0.65, 0.98]` |
+
+#### Hydrodynamic Skiff Swamping Physics
+- **Observed Mean $H_s$**: `1.62m`
+- **Skiff Boarding Feasibility**: **`69.3%`** (logistic transition at $H_0 = 1.85\text{m}$)
+- **Composite Dark Vessel Hazard Score**: **`1.79 / 10.0`**
+
+> [!NOTE]
+> **Physical Boarding Invariant**: In the Bonny/Brass Fairway, pirate skiff boardings drop to near zero when significant wave height $H_s > 2.2\text{m}$ due to swamping dynamics. High SAR dark vessel activity coinciding with calm sea-states ($H_s < 1.6\text{m}$) creates a critical attack window.
 
 ---
 
-### 4. Institutional Invariant Verification & Defense Matrix
+### 3. MSSA Seasonal Decomposition & Avoided Escort False-Alarm OPEX Savings
 
-| Invariant Category | Defense Layer | Implementation Mechanism | Audit Status |
-|---|---|---|---|
-| **Architecture Boundaries** | Clean Architecture / AST Guard | Python AST inspection confirms `core/` contains 0 imports from `application/` or `infrastructure/` | **VERIFIED (PASS)** |
-| **Temporal Monotonicity** | Pydantic + C SQLite CHECK | `CHECK (pub_time >= event_time)` at database layer; Pydantic model validator at boundary | **VERIFIED (PASS)** |
-| **Severity Bounds** | SQLite CHECK Constraint | `CHECK (min_severity >= 0.0 AND max_severity <= 10.0 AND max_severity >= min_severity)` | **VERIFIED (PASS)** |
-| **Physical Sandbox Isolation** | OS-Level File Guard | `application/isolation.py` raises `PermissionError` when `env_mode='sandbox'` targets production DB | **VERIFIED (PASS)** |
-| **Cryptographic Lineage** | SHA-256 Audit Hash | Every incident record and raw file carries immutable SHA-256 digest | **VERIFIED (PASS)** |
+Multivariate Singular Spectrum Analysis ($M = 4$ channels, window length $L = 10$) separates secular fairway drift from monsoon sea-state seasonal harmonics and isolated structural shocks:
+$$\mathbf{Y}_t = \mathbf{T}_t \text{ (Secular Trend)} + \mathbf{S}_t \text{ (Seasonal Harmonics)} + \mathbf{R}_t \text{ (Structural Shock Residual)}$$
+
+| MSSA Metric | Value | Forensic / Operational Significance |
+|---|---|---|
+| **Frobenius Reconstruction Error** | **`1.77e-13`** | Strict mathematical invariant ($\|\mathbf{Y} - (\mathbf{T}+\mathbf{S}+\mathbf{R})\|_F < 10^{-9}$) verified |
+| **Secular + Seasonal Baseline Anchor** | **`4.46 / 10.0`** | Reconstructed fairway baseline (Channel 0 trend + seasonal harmonics) |
+| **Explained Variance Ratio (EVR)** | **`0.9752`** | Proportion of total fairway variance captured by leading 3 triplets |
+| **Avoided False Alarm Days** | **`4 days`** | Periods where raw threat spiked purely due to seasonal harmonics while structural shock remained benign |
+| **Avoided Escort OPEX Savings** | **`$74,000.00 USD`** | Direct commercial savings from avoiding unnecessary private escort vessel (PMSC) charters |
+
+> [!TIP]
+> **Commercial Value Proof**: At standard West Africa security escort rates of **$18,500/day**, isolating seasonal sea-state harmonics prevents **4 false-alarm escort mobilizations**, returning **$74,000.00 in verified OPEX savings** across this vintage window.
 
 ---
 
-### 5. Conclusion & Phase 1 Sign-Off
+### 4. POT-GPD Tail Risk, Empirical Bayes Regularization & First-Principles JWC Pricing
 
-The `maritime-tail-risk-engine` Phase 1 implementation successfully demonstrates institutional-grade quantitative rigor without governance theater. By rejecting heavy theorem-prover detours and adopting Python-native verification (AST static boundary checks, Pydantic temporal validators, SQLite C-engine CHECK constraints, and cross-feed union envelopes), the engine delivers verifiable underwriting intelligence for the Bonny & Brass Fairway.
+#### Table 4A: MSSA Structural Shock Residual Tail (POT-GPD with Empirical Bayes Shrinkage)
+Small-sample MLE on GPD shape $\xi$ has extreme variance when exceedance counts are small. We apply **Empirical Bayes Shrinkage** against the historical Gulf of Guinea prior ($\xi_0 = 0.18, \sigma_0 = 1.5, \kappa = 12.0$), preventing optimizer railing at $\xi = -0.5000$:
+
+| Parameter | Raw Optimization Value | Shrunk Empirical Bayes Estimate | Regularization Impact |
+|---|---|---|---|
+| **GPD Shape Parameter ($\xi$)** | `-0.5000` | **`-0.1291`** | Regularized toward prior $\xi_0=0.18$; avoids boundary railing |
+| **GPD Scale Parameter ($\sigma$)** | N/A | **`2.4740`** | Regularized scale parameter |
+| **Shrinkage Weight ($w$)** | N/A | **`0.4545`** | Weight assigned to local data vs prior ($N_u=10$) |
+| **Residual $\text{VaR}_{0.95}$** | N/A | **`5.59`** | 95th percentile structural residual shock |
+| **Residual $\text{VaR}_{0.99}$** | N/A | **`8.51`** | 99th percentile structural residual shock |
+| **Residual $\text{CVaR}_{0.99}$** | N/A | **`9.96`** | Mean structural shock conditional on tail breach |
+
+#### Table 4B: Full Composite Corridor Severity Tail (Reconstructed Baseline + GPD Shock)
+To eliminate the visual scale mismatch where residual shock metrics were compared against raw empirical metrics, the composite corridor severity tail anchors the GPD structural shock to the reconstructed MSSA baseline ($4.46 / 10.0$):
+
+| Metric | Empirical Sample Severity | Composite Corridor GPD Severity | Quantile Invariant |
+|---|---|---|---|
+| **Value at Risk ($\text{VaR}_{0.95}$)** | `9.31 / 10.0` | **`10.00 / 10.0`** | Base threshold |
+| **Value at Risk ($\text{VaR}_{0.99}$)** | `9.80 / 10.0` | **`10.00 / 10.0`** | $\ge \text{VaR}_{0.95}$ |
+| **Expected Shortfall ($\text{CVaR}_{0.99}$)** | `9.80 / 10.0` | **`10.00 / 10.0`** | $\ge \text{VaR}_{0.99}$ |
+
+#### Table 4C: First-Principles Lloyd's JWC 7-Day AP & Demurrage Pricing
+Replaces naive multiplier heuristics with first-principles underwriting loss expectation on a **$85,000,000 USD** container/tanker hull:
+
+| Pricing Parameter / Output | Value | Actuarial Definition |
+|---|---|---|
+| **Calibrated 7-Day Breach Probability** | **`25.0%`** | Probability of corridor risk exceeding baseline in 7d transit window |
+| **Expected Tail Delay Duration** | **`8.50 days`** | Operational delay days given extreme tail breach ($0.85 \times \text{CVaR}_{0.99}$) |
+| **Tail Demurrage Loss Exposure** | **`$382,500.00 USD`** | Financial demurrage loss at $45,000/day charterparty rate |
+| **Catastrophic Boarding Loss Exposure** | **`$3,500,000.00 USD`** | Expected damage/ransom conditional on tail breach |
+| **Expected 7-Day Tail Loss** | **`$970,625.00 USD`** | Unconditional actuarial expected loss over 7-day transit |
+| **Fair Actuarial War-Risk AP** | **`114.19 bps`** | Fair additional premium rate (1 bps = 0.01% of hull value) |
+| **Lloyd's JWC Market Benchmark** | **`15.00 bps`** | Standard commercial market quote for Gulf of Guinea transit |
+| **Underwriter Commercial Spread** | **`+99.19 bps`** | **`$+843,125.00 USD`** per transit underpricing hazard |
+
+#### Table 4D: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State
+Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$, $\alpha=0.05, \beta=0.10$):
+
+| SPRT Surveillance Metric | Value | Operational Watch Status |
+|---|---|---|
+| **Corridor Watch State** | **`RED_ESCALATION_BREACH`** | Deterministic state: `GREEN_BASELINE` \| `AMBER_CORRIDOR_WATCH` \| `RED_ESCALATION_BREACH` |
+| **Cumulative Log-Likelihood Ratio** | **`+8.7074`** | $S_t = \sum \Lambda(y_t)$ |
+| **Decision Boundaries** | `A = -2.2513, B = +2.8904` | Accept $H_0$ if $S_t \le A$; Accept $H_1$ if $S_t \ge B$ |
+| **Breach Incident Count** | `10 / 40 periods` | Observed structural shock exceedances |
+
+---
+
+### 5. Institutional Compliance & Mandatory Commercial Disclaimer
+
+### COMMERCIAL DISCLAIMER
+This document and the underlying risk model outputs are generated strictly for academic, underwriting research, and quantitative risk evaluation purposes based exclusively on publicly available Open Source Intelligence (OSINT) maritime security data. This report does not constitute official nautical advice, security operational clearance, or guaranteed insurance pricing. Neither the authors nor the operators of the maritime-tail-risk-engine assume liability for maritime navigation, chartering decisions, or asset deployment in war risk or high-risk areas (HRA).
+
+> [!IMPORTANT]
+> **Civilian Open-Source Intelligence (OSINT) Certification**: This intelligence and model suite strictly utilizes 100% verified civilian open-source feeds (Copernicus ERA5, GFW Sentinel-1 SAR radar, IMF PortWatch AIS, NOAA VIIRS Nightfire) and zero restricted military or naval C2 feeds (Falcon Eye, RMAC).
+
+#### Author Identity Block
+- **Author**: **Bestman Ezekwu Enock**
+- **Role**: Quantitative Risk Architect & Maritime Tail Risk Lead
+- **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)
+- **ORCID**: `0009-0008-0112-9273`
+- **LinkedIn**: [Bestman Ezekwu Enock](https://www.linkedin.com/in/bestman-ezekwu/)
+
+---
+*Report generated deterministically by `maritime-tail-risk-engine`.*

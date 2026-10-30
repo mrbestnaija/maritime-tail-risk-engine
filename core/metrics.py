@@ -10,7 +10,14 @@ Calculates:
 from __future__ import annotations
 
 import math
-from typing import Sequence
+from typing import Optional, Sequence
+from core.gpd_tail_fitter import (
+    GPDTailRiskEstimate,
+    compute_actuarial_war_risk_loading_bps,
+    compute_gpd_var_cvar,
+    fit_pot_gpd,
+    gpd_cdf,
+)
 from core.models import MaritimeIncident, SeverityInterval
 
 
