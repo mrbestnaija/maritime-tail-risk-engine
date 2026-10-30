@@ -8,9 +8,11 @@ the first record. If worst-case severity is dropped, the underwriter underprices
 
 from __future__ import annotations
 
+from pathlib import Path
 import pytest
 from core.models import GeoCoordinates, MaritimeIncident, SeverityInterval
 from application.ingestion_hygiene import IngestionHygieneService
+from infrastructure.osint_feed_loader import OSINTFeedLoader
 
 
 def test_deduplication_takes_union_envelope_and_centroid():
@@ -93,3 +95,29 @@ def test_independent_incidents_not_merged():
     hygiene = IngestionHygieneService()
     deduped = hygiene.deduplicate_cross_feed([rep1, rep2])
     assert len(deduped) == 2
+
+
+def test_40_row_sample_dataset_deduplication():
+    """Verify 40-row realistic sample dataset loads and deduplicates with centroid imputation."""
+    test_dir = Path(__file__).resolve().parent
+    engine_root = test_dir.parent.parent
+    csv_path = engine_root / "data" / "sample_gog_osint_vintage.csv"
+
+    assert csv_path.exists(), f"Sample dataset not found at {csv_path}"
+
+    raw_incidents, sha256 = OSINTFeedLoader.load_incidents_from_csv(csv_path)
+    assert len(raw_incidents) == 40, f"Expected exactly 40 raw records, found {len(raw_incidents)}"
+
+    hygiene = IngestionHygieneService()
+    deduped = hygiene.deduplicate_cross_feed(raw_incidents)
+
+    # Due to duplicates across MDAT-GOG, IMB, DRYAD, and revisions:
+    assert len(deduped) < 40
+    assert len(deduped) == 31
+
+    # Verify that all deduplicated incidents have valid coordinates (centroid imputed)
+    for inc in deduped:
+        assert -90.0 <= inc.coordinates.latitude <= 90.0
+        assert -180.0 <= inc.coordinates.longitude <= 180.0
+        assert inc.severity.max_severity >= inc.severity.min_severity
+        assert inc.pub_time >= inc.event_time

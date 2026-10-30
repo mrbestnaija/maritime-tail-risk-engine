@@ -5,11 +5,11 @@ Validates that `PHASE1_VINTAGE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md`:
 1. Contains the exact `COMMERCIAL_DISCLAIMER` verbatim.
 2. Contains the complete `IDENTITY & AUDIT BLOCK`.
 3. Displays the SHA-256 cryptographic lineage hash of the ingested dataset.
+4. Quantifies reporting-lag blind-spot distortion metrics.
 """
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 import pytest
@@ -26,7 +26,7 @@ def test_tear_sheet_contains_mandatory_disclaimer_and_sha256(tmp_path: Path):
     """Verify tear sheet contains exact disclaimer, identity block, and SHA-256 hash."""
     test_dir = Path(__file__).resolve().parent
     engine_root = test_dir.parent.parent
-    dataset_file = engine_root / "data" / "gog_bonny_brass_vintage_osint.json"
+    dataset_file = engine_root / "data" / "sample_gog_osint_vintage.csv"
     out_file = tmp_path / "TEST_TEAR_SHEET.md"
 
     res = run_phase1_audit(dataset_file, out_file)
@@ -49,6 +49,11 @@ def test_tear_sheet_contains_mandatory_disclaimer_and_sha256(tmp_path: Path):
     assert f"Dataset SHA-256 Lineage Hash**: `{expected_hash}`" in content, (
         f"Tear sheet must explicitly publish dataset SHA-256 lineage hash ({expected_hash})"
     )
+
+    # Reporting lag blind spot distortion check
+    assert "Reporting-Lag Blind-Spot Distortion Analysis" in content
+    assert "Mean Reporting Lag" in content
+    assert "Underwriter Blind-Spot Hazard" in content
 
     # Underwriter tail risk metrics check
     assert "Value at Risk" in content

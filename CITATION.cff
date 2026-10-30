@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software in academic or underwriting risk research, please cite it as below."
+title: "maritime-tail-risk-engine: Python-Native Clean Architecture Tail Risk Underwriting Engine"
+version: 0.1.0
+date-released: 2026-10-30
+url: "https://github.com/mrbestnaija/maritime-tail-risk-engine"
+authors:
+  - family-names: "Enock"
+    given-names: "Bestman Ezekwu"
+    email: "ezekwu77@gmail.com"
+keywords:
+  - "maritime tail risk"
+  - "extreme value theory"
+  - "conditional value at risk"
+  - "gulf of guinea"
+  - "underwriting"
+  - "clean architecture"
+  - "python-native verification"
+license: "MIT"
