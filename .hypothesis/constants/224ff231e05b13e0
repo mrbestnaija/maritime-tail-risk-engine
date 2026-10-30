@@ -1,4 +1,0 @@
-# file: C:\Users\Bestman\AppData\Roaming\Python\Python314\site-packages\nbtlib\literal\serializer.py
-# hypothesis_version: 6.151.9
-
-['"', "'", ',', ', ', ':', ': ', ';', '; ', 'ESCAPE_SEQUENCES', 'ESCAPE_SUBS', 'STRING_QUOTES', 'Serializer', '[{}]', '\\', '\\\\', '^[a-zA-Z0-9._+-]+$', 'array', 'compound', 'list', 'serialize_tag', '{{{}}}', '{}', '|']

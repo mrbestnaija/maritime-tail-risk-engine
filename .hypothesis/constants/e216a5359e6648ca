@@ -1,4 +1,0 @@
-# file: C:\Users\Bestman\AppData\Roaming\Python\Python314\site-packages\nbtlib\literal\parser.py
-# hypothesis_version: 6.151.9
-
-[',', '.', '.+?', ':', 'BYTE_ARRAY', 'CLOSE_BRACKET', 'CLOSE_COMPOUND', 'COLON', 'COMMA', 'COMPOUND', 'INT_ARRAY', 'INVALID', 'InvalidLiteral', 'LIST', 'LONG_ARRAY', 'NUMBER', 'Parser', 'QUOTED_STRING', 'STRING', 'Token', '[a-zA-Z0-9._+-]+', '\\[', '\\[B;', '\\[I;', '\\[L;', '\\\\.', '\\]', '\\{', '\\}', 'b', 'byte', 'd', 'f', 'false', 'int', 'l', 'long', 'parse_nbt', 's', 'span', 'tokenize', 'true', 'type', 'value', '|']
