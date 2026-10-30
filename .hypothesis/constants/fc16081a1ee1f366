@@ -1,0 +1,4 @@
+# file: C:\Users\Bestman\personal_projects\portfolio_maximizer_v45\portfolio_maximizer_v45\maritime-tail-risk-engine\infrastructure\osint_feed_loader.py
+# hypothesis_version: 6.151.9
+
+[65536, 'event_time', 'feed_source', 'incident_id', 'latitude', 'longitude', 'max_severity', 'min_severity', 'pub_time', 'rb', 'utf-8', 'vessel_name']

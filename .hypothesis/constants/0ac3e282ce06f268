@@ -1,0 +1,4 @@
+# file: C:\Users\Bestman\AppData\Roaming\Python\Python314\site-packages\nbtlib\tag.py
+# hypothesis_version: 6.151.9
+
+[b'\x00', '<', '>', 'Array', 'B', 'Base', 'Byte', 'ByteArray', 'CastError', 'Compound', 'Double', 'End', 'EndInstantiation', 'Float', 'H', 'I', 'IncompatibleItemType', 'Int', 'IntArray', 'Invalid byte order', 'L', 'List', 'Long', 'LongArray', 'Numeric', 'NumericInteger', 'OutOfRange', 'Short', 'String', '__slots__', 'array', 'b', 'big', 'compound', 'd', 'f', 'h', 'i', 'i4', 'i8', 'list', 'little', 'numeric', 'q', 'replace', 's', 'string', 'subtype', 'tag_id', 'utf-8']

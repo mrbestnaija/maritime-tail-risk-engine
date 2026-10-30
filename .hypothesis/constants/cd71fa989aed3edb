@@ -1,0 +1,4 @@
+# file: C:\Users\Bestman\personal_projects\portfolio_maximizer_v45\portfolio_maximizer_v45\maritime-tail-risk-engine\core\metrics.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.99, 'incident_count', 'max_cvar_99', 'max_var_99', 'mean_severity_max', 'mean_severity_min', 'min_cvar_99', 'min_var_99']

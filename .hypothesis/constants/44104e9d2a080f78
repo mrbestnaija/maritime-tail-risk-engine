@@ -1,0 +1,4 @@
+# file: C:\Users\Bestman\AppData\Roaming\Python\Python314\site-packages\nbtlib\contrib\minecraft\structure.py
+# hypothesis_version: 6.151.9
+
+['DataVersion', 'Name', 'Properties', 'StructureFile', 'StructureFileData', 'author', 'blockPos', 'blocks', 'entities', 'nbt', 'palette', 'palettes', 'pos', 'size', 'state']

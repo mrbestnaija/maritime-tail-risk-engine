@@ -1,0 +1,4 @@
+# file: C:\Users\Bestman\personal_projects\portfolio_maximizer_v45\portfolio_maximizer_v45\maritime-tail-risk-engine\core\models.py
+# hypothesis_version: 6.151.9
+
+[-180.0, -90.0, 0.0, 2.0, 10.0, 90.0, 180.0, 3440.065, 'event_time', 'max_severity', 'min_severity', 'pub_time']
