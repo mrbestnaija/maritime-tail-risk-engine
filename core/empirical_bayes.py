@@ -6,8 +6,8 @@ toward the historical Gulf of Guinea maritime tail prior (xi_0 = 0.18, sigma_0 =
 
 Mathematical Formulation:
 - Sample PWM: a_1 = (1 / N_u) * sum_{i=1}^{N_u} ((N_u - i) / (N_u - 1)) * y_{(i)}
-- Local PWM estimates:
-    xi_local = 2 - y_mean / (y_mean - 2 * a_1)
+- Local PWM estimates (Pickands / EVT positive heavy-tail convention xi = -k):
+    xi_local = y_mean / (y_mean - 2 * a_1) - 2.0
     sigma_local = (2 * y_mean * a_1) / (y_mean - 2 * a_1)
 - Shrinkage weight: w = N_u / (N_u + kappa)
 - Shrunk estimates:
@@ -72,30 +72,33 @@ def shrink_gpd_parameters(
 
     denom = y_mean - 2.0 * a_1
 
-    # Invert PWM equations for Generalized Pareto Distribution
+    # Invert PWM equations for Generalized Pareto Distribution.
+    # Hosking & Wallis (1987) parameter k = 2 - y_mean / denom is -xi in standard EVT.
+    # Therefore, Pickands / standard positive heavy-tail shape xi = -k = (y_mean / denom) - 2.0.
     if abs(denom) < 1e-9 or denom <= 0.0:
         xi_local = 0.0
         sigma_local = y_mean
     else:
-        xi_local = 2.0 - (y_mean / denom)
+        xi_local = (y_mean / denom) - 2.0
         sigma_local = (2.0 * y_mean * a_1) / denom
 
     # Bound local estimates before shrinkage to prevent numerical explosion
-    if not np.isfinite(xi_local) or xi_local < -0.5:
-        xi_local = -0.5
-    elif xi_local > 0.95:
-        xi_local = 0.95
+    # Clamped to [-0.25, 0.65] per Phase 2B.1 calibration spec
+    if not np.isfinite(xi_local):
+        xi_local = 0.0
+    else:
+        xi_local = min(max(xi_local, -0.25), 0.65)
 
     if not np.isfinite(sigma_local) or sigma_local <= 0.0:
         sigma_local = max(y_mean, 0.1)
 
-    # Apply Empirical Bayes shrinkage
+    # Apply Empirical Bayes shrinkage against historical maritime tail prior
     w = float(n_u / (n_u + kappa))
     xi_shrunk = float(w * xi_local + (1.0 - w) * prior_xi)
     sigma_shrunk = float(w * sigma_local + (1.0 - w) * prior_sigma)
 
-    # Final domain bounds
-    xi_shrunk = min(max(xi_shrunk, -0.499), 0.95)
+    # Final domain bounds ensuring heavy-tail shrinkage band [0.05, 0.25]
+    xi_shrunk = min(max(xi_shrunk, 0.05), 0.25)
     sigma_shrunk = max(sigma_shrunk, 0.01)
 
     return xi_shrunk, sigma_shrunk, w

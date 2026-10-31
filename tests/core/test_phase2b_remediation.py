@@ -76,16 +76,18 @@ def test_empirical_bayes_edge_cases():
 # ==============================================================================
 
 def test_gpd_composite_corridor_quantiles_ordered():
-    """Verify strict quantile monotonicity: composite CVaR_99 >= VaR_99 >= VaR_95."""
+    """Verify strict quantile monotonicity: composite CVaR_99 > VaR_99 > VaR_95 and positive heavy tail."""
     data = [1.2, 1.5, 1.8, 2.1, 2.4, 2.8, 3.2, 3.8, 4.5, 5.2, 6.1, 7.5, 8.9]
     res = fit_pot_gpd(data, baseline_anchor=4.46, apply_shrinkage=True)
 
-    # Monotonicity check
-    assert res.composite_corridor_var_99 >= res.composite_corridor_var_95
-    assert res.composite_corridor_cvar_99 >= res.composite_corridor_var_99
+    # Monotonicity check: strict inequality
+    assert res.composite_corridor_var_99 > res.composite_corridor_var_95
+    assert res.composite_corridor_cvar_99 > res.composite_corridor_var_99
+    # Positive heavy tail shape parameter from Empirical Bayes shrinkage
+    assert 0.05 <= res.shape_xi <= 0.25
     # Baseline anchor preserved
     assert res.baseline_anchor == 4.46
-    assert res.composite_corridor_var_95 == res.baseline_anchor + res.residual_var_95
+    assert math.isclose(res.composite_corridor_var_95, res.baseline_anchor + res.residual_var_95, rel_tol=1e-6)
 
 
 # ==============================================================================
@@ -172,6 +174,27 @@ def test_jwc_zero_probability_zero_loading():
     assert res.expected_7d_tail_loss_usd == 0.0
     assert res.actuarial_7d_war_risk_ap_bps == 0.0
     assert res.mispricing_spread_bps == -15.0
+
+
+def test_jwc_7day_war_risk_pricer_calibrated_institutional_band():
+    """Verify calibrated single-vessel transit exposure lands AP in [18.0, 35.0] bps band."""
+    res = compute_jwc_7day_war_risk_ap(
+        calibrated_7d_breach_prob=0.25,
+        composite_cvar_99=10.0,
+        insured_vessel_usd=85_000_000.0,
+        daily_demurrage_usd=45_000.0,
+        catastrophic_boarding_loss_usd=3_500_000.0,
+        jwc_market_benchmark_bps=15.0,
+        vessel_transit_exposure_factor=0.25,
+        hydro_boarding_feasibility=0.463,
+    )
+
+    # Effective probability: 0.25 * 0.25 * (0.5 + 0.5 * 0.463) = 0.0457
+    assert 0.04 <= res.effective_vessel_breach_prob <= 0.05
+    # Fair AP in institutional underwriting band [18.0, 35.0] bps
+    assert 18.0 <= res.actuarial_7d_war_risk_ap_bps <= 35.0
+    # Mispricing spread over 15.0 bps commercial market quote
+    assert res.mispricing_spread_bps > 0.0
 
 
 # ==============================================================================

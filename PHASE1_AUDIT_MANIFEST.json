@@ -8,7 +8,7 @@
     "longitude_min": 6.5,
     "longitude_max": 7.5
   },
-  "timestamp_utc": "2026-10-30T18:56:59.779898+00:00",
+  "timestamp_utc": "2026-10-31T19:04:20.941899+00:00",
   "lineage_hashes": {
     "incident_dataset_sha256": "cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c",
     "civilian_telemetry_dataset_sha256": "c3685e086d228af1f3d0e44314f3c50e5af000406c0d55559d68d77c95157db7",
@@ -36,19 +36,19 @@
     "kappa": 12.0,
     "shrinkage_weight_w": 0.45454545454545453,
     "raw_xi": -0.5,
-    "shrunk_xi": -0.1290909090909091,
+    "shrunk_xi": 0.25,
     "shrunk_sigma": 2.4739945733464217
   },
   "gpd_tail_metrics": {
     "threshold_u": 1.9945412539105871,
     "exceedance_count": 10,
-    "residual_var_95": 5.589868814352744,
-    "residual_var_99": 8.510708969736227,
-    "residual_cvar_99": 9.956842798265875,
+    "residual_var_95": 6.896502040530839,
+    "residual_var_99": 14.226643128397649,
+    "residual_cvar_99": 21.6026698510219,
     "baseline_anchor": 4.462192245933129,
-    "composite_corridor_var_95": 10.052061060285872,
-    "composite_corridor_var_99": 12.972901215669356,
-    "composite_corridor_cvar_99": 14.419035044199003
+    "composite_corridor_var_95": 11.358694286463969,
+    "composite_corridor_var_99": 18.68883537433078,
+    "composite_corridor_cvar_99": 26.06486209695503
   },
   "hydrodynamic_physics": {
     "significant_wave_height_m": 1.6175000000000002,
@@ -70,11 +70,11 @@
     "delay_days": 8.5,
     "cvar_99_demurrage_usd": 382500.0,
     "catastrophic_tail_loss_usd": 3500000.0,
-    "expected_7d_tail_loss_usd": 970625.0,
-    "actuarial_7d_war_risk_ap_bps": 114.19117647058825,
+    "expected_7d_tail_loss_usd": 205397.3571220142,
+    "actuarial_7d_war_risk_ap_bps": 24.16439495553108,
     "jwc_market_benchmark_bps": 15.0,
-    "mispricing_spread_bps": 99.19117647058825,
-    "per_transit_mispricing_usd": 843125.0000000001
+    "mispricing_spread_bps": 9.16439495553108,
+    "per_transit_mispricing_usd": 77897.35712201417
   },
   "author_block": {
     "author": "Bestman Ezekwu Enock",
