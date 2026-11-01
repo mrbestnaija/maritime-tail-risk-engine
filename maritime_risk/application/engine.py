@@ -78,6 +78,8 @@ class CorridorAuditResult:
                 return obj.isoformat()
             if hasattr(obj, "model_dump"):
                 return obj.model_dump()
+            if hasattr(obj, "dict") and callable(getattr(obj, "dict")):
+                return obj.dict()
             if hasattr(obj, "__dataclass_fields__"):
                 return {k: _serialize(v) for k, v in asdict(obj).items()}
             if isinstance(obj, (list, tuple)):
@@ -88,8 +90,8 @@ class CorridorAuditResult:
 
         return {
             "corridor_id": self.corridor_spec.corridor_id,
-            "corridor_spec": self.corridor_spec.model_dump(),
-            "vessel_spec": self.vessel_spec.model_dump(),
+            "corridor_spec": _serialize(self.corridor_spec),
+            "vessel_spec": _serialize(self.vessel_spec),
             "as_of": self.as_of.isoformat(),
             "raw_incident_count": self.raw_incident_count,
             "dedup_incident_count": self.dedup_incident_count,
@@ -517,7 +519,9 @@ class MaritimeRiskEngine:
         # Calculate cryptographic SHA-256 lineage hashes
         if dataset_sha256 is None:
             inc_bytes = json.dumps(
-                [inc.model_dump() for inc in typed_incidents], default=str, sort_keys=True
+                [inc.model_dump() if hasattr(inc, "model_dump") else inc.dict() for inc in typed_incidents],
+                default=str,
+                sort_keys=True,
             ).encode("utf-8")
             calc_dataset_sha256 = hashlib.sha256(inc_bytes).hexdigest()
         else:
@@ -525,7 +529,9 @@ class MaritimeRiskEngine:
 
         if telemetry_sha256 is None:
             tel_bytes = json.dumps(
-                [tel.model_dump() for tel in typed_telemetry], default=str, sort_keys=True
+                [tel.model_dump() if hasattr(tel, "model_dump") else tel.dict() for tel in typed_telemetry],
+                default=str,
+                sort_keys=True,
             ).encode("utf-8")
             calc_telemetry_sha256 = hashlib.sha256(tel_bytes).hexdigest()
         else:
@@ -577,7 +583,10 @@ class MaritimeRiskEngine:
         max_valid_l = max(2, T // 2)
         if mssa_spec.window_length is not None and mssa_spec.window_length > max_valid_l:
             adapted_l = max(2, min(T // mssa_spec.window_length_divisor, max_valid_l))
-            mssa_spec = mssa_spec.model_copy(update={"window_length": adapted_l})
+            if hasattr(mssa_spec, "model_copy"):
+                mssa_spec = mssa_spec.model_copy(update={"window_length": adapted_l})
+            else:
+                mssa_spec = mssa_spec.copy(update={"window_length": adapted_l})
 
         decomposer = self.registry.get_decomposer(decomposer_name or self.decomposer_name)
         mssa_res = decomposer.decompose(Y, spec=mssa_spec)

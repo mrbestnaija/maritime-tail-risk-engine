@@ -8,7 +8,7 @@ This document and the underlying risk model outputs are generated strictly for a
 ### IDENTITY & AUDIT BLOCK
 - **Engine**: `maritime-tail-risk-engine` (Phase 2B First-Principles & Multi-Sensor Fusion)
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
-- **Audit Timestamp**: `2026-11-01 11:51:03 UTC`
+- **Audit Timestamp**: `2026-11-01 12:00:27 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
