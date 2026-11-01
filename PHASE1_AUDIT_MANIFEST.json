@@ -8,7 +8,7 @@
     "longitude_min": 6.5,
     "longitude_max": 7.5
   },
-  "timestamp_utc": "2026-11-01T11:04:13.792698+00:00",
+  "timestamp_utc": "2026-11-01T11:51:03.036878+00:00",
   "lineage_hashes": {
     "incident_dataset_sha256": "cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c",
     "civilian_telemetry_dataset_sha256": "c3685e086d228af1f3d0e44314f3c50e5af000406c0d55559d68d77c95157db7",

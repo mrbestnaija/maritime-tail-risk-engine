@@ -9,8 +9,8 @@ import argparse
 from pathlib import Path
 import sys
 
-from application.engine import MaritimeRiskEngine
-from infrastructure.osint_feed_loader import OSINTFeedLoader
+from .application.engine import MaritimeRiskEngine
+from .infrastructure.osint_feed_loader import OSINTFeedLoader
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -76,7 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "verify":
-        from verify_repo import run_verification
+        from .verification import run_verification
         return run_verification(Path(args.target_dir))
 
     elif args.command == "audit" or args.command is None:

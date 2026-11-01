@@ -30,6 +30,8 @@ from pathlib import Path
 
 # Ensure target engine directory is on sys.path
 _current_dir = Path(__file__).resolve().parent
+if _current_dir.name == "maritime_risk":
+    _current_dir = _current_dir.parent
 if str(_current_dir) not in sys.path:
     sys.path.insert(0, str(_current_dir))
 
@@ -59,13 +61,13 @@ def check_ast_reachability_and_boundaries(target_dir: Path) -> tuple[str, str]:
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     root_pkg = alias.name.split(".")[0]
-                    if root_pkg in forbidden_modules:
+                    if root_pkg in forbidden_modules or alias.name.startswith("maritime_risk.application") or alias.name.startswith("maritime_risk.infrastructure"):
                         violations.append(
                             f"{py_file.name}:{node.lineno} forbidden direct import '{alias.name}'"
                         )
             elif isinstance(node, ast.ImportFrom) and node.module:
                 root_pkg = node.module.split(".")[0]
-                if root_pkg in forbidden_modules:
+                if root_pkg in forbidden_modules or node.module.startswith("maritime_risk.application") or node.module.startswith("maritime_risk.infrastructure"):
                     violations.append(
                         f"{py_file.name}:{node.lineno} forbidden from import '{node.module}'"
                     )
@@ -131,25 +133,31 @@ def check_anti_hardcoding_purity(target_dir: Path) -> tuple[str, str]:
 
     violations: list[str] = []
 
-    for mod_name in math_modules:
-        file_path = target_dir / "core" / mod_name
-        if not file_path.exists():
-            violations.append(f"Math module not found: {mod_name}")
-            continue
+    dirs_to_check = [target_dir / "core"]
+    mr_core = target_dir / "maritime_risk" / "core"
+    if mr_core.exists() and mr_core.is_dir():
+        dirs_to_check.append(mr_core)
 
-        tree = ast.parse(file_path.read_text(encoding="utf-8"), filename=str(file_path))
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Constant):
-                val = node.value
-                if isinstance(val, (int, float)) and not isinstance(val, bool):
-                    if float(val) in banned_floats:
+    for cdir in dirs_to_check:
+        for mod_name in math_modules:
+            file_path = cdir / mod_name
+            if not file_path.exists():
+                violations.append(f"Math module not found: {file_path}")
+                continue
+
+            tree = ast.parse(file_path.read_text(encoding="utf-8"), filename=str(file_path))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Constant):
+                    val = node.value
+                    if isinstance(val, (int, float)) and not isinstance(val, bool):
+                        if float(val) in banned_floats:
+                            violations.append(
+                                f"{file_path.name}:{node.lineno} banned hardcoded literal {val}"
+                            )
+                    elif isinstance(val, str) and val in banned_strings:
                         violations.append(
-                            f"{mod_name}:{node.lineno} banned hardcoded literal {val}"
+                            f"{file_path.name}:{node.lineno} banned hardcoded string '{val}'"
                         )
-                elif isinstance(val, str) and val in banned_strings:
-                    violations.append(
-                        f"{mod_name}:{node.lineno} banned hardcoded string '{val}'"
-                    )
 
     if violations:
         return "FAIL", f"Hardcoded domain literals detected in math modules:\n" + "\n".join(violations)
@@ -177,15 +185,24 @@ def check_anti_hardcoding_purity(target_dir: Path) -> tuple[str, str]:
 
 def check_db_isolation_guard(target_dir: Path) -> tuple[str, str]:
     """Verify SQLite C-engine CHECK constraints and sandbox isolation guards."""
-    sqlite_file = target_dir / "infrastructure" / "sqlite_storage.py"
-    isolation_file = target_dir / "application" / "isolation.py"
+    resolved_target = target_dir.resolve()
+    if str(resolved_target) not in sys.path:
+        sys.path.insert(0, str(resolved_target))
 
-    if not sqlite_file.exists():
-        return "SKIP", "Target directory does not contain SQLite persistence layer (infrastructure/sqlite_storage.py)"
+    sqlite_file = resolved_target / "infrastructure" / "sqlite_storage.py"
+    mr_sqlite_file = resolved_target / "maritime_risk" / "infrastructure" / "sqlite_storage.py"
+    isolation_file = resolved_target / "application" / "isolation.py"
+
+    if not sqlite_file.exists() and not mr_sqlite_file.exists():
+        return "SKIP", "Target directory does not contain SQLite persistence layer"
 
     try:
-        from infrastructure.sqlite_storage import SCHEMA_SQL, SQLiteIncidentRepository
-        from application.isolation import get_isolated_database_connection
+        try:
+            from maritime_risk.infrastructure.sqlite_storage import SCHEMA_SQL, SQLiteIncidentRepository
+            from maritime_risk.application.isolation import get_isolated_database_connection
+        except ImportError:
+            from infrastructure.sqlite_storage import SCHEMA_SQL, SQLiteIncidentRepository
+            from application.isolation import get_isolated_database_connection
     except ImportError as e:
         return "FAIL", f"Failed to import database modules: {e}"
 
@@ -270,13 +287,19 @@ def check_numeric_calibration_and_sdk_contract(target_dir: Path) -> tuple[str, s
     if missing_exports:
         return "FAIL", f"maritime_risk.__all__ contains missing exports: {missing_exports}"
 
-    # Verify headless in-memory engine instantiation
+    # Verify headless in-memory engine instantiation and aliases
     try:
         engine = mtr.MaritimeRiskEngine.from_specs()
         if engine is None or not hasattr(engine, "evaluate"):
             return "FAIL", "MaritimeRiskEngine.from_specs() did not return a valid engine instance"
+        if not hasattr(mtr, "MaritimeTailRiskEngine") or mtr.MaritimeTailRiskEngine is not mtr.MaritimeRiskEngine:
+            return "FAIL", "MaritimeTailRiskEngine alias missing or does not match MaritimeRiskEngine"
+        # Verify declarative config loader works
+        engine_cfg = mtr.MaritimeRiskEngine.from_config_files(corridor_id="GOG_BONNY_BRASS_FAIRWAY")
+        if engine_cfg is None:
+            return "FAIL", "MaritimeRiskEngine.from_config_files() returned None"
     except Exception as e:
-        return "FAIL", f"MaritimeRiskEngine.from_specs() failed with zero file I/O: {e}"
+        return "FAIL", f"MaritimeRiskEngine initialization failed: {e}"
 
     # 2. Numeric Calibration Falsifier
     try:

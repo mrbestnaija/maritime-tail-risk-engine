@@ -7,3 +7,6 @@ __pycache__/
 .tmp/
 .env
 .env.local
+*.egg-info/
+build/
+dist/

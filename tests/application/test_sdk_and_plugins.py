@@ -128,8 +128,39 @@ def test_sdk_headless_in_memory_evaluation() -> None:
     assert "$40,000,000 USD" in md_text
 
 
-def test_sdk_corridor_and_vessel_switching() -> None:
+    # Verify DataFrame ingestion directly
+    class MockDataFrame:
+        def __init__(self, records: list[dict[str, Any]]):
+            self._records = records
+
+        def to_dict(self, orient: str = "records") -> list[dict[str, Any]]:
+            return self._records
+
+    df_incidents = MockDataFrame([{"incident_id": f"DF-{i}", "event_time": base_time + i * 86400, "pub_time": base_time + i * 86400 + 10, "coordinates": GeoCoordinates(latitude=4.2, longitude=6.8), "severity": SeverityInterval(min_severity=2.0, max_severity=4.0), "feed_source": "DF_SRC", "lineage_hash": "df_hash"} for i in range(10)])
+    df_telemetry = MockDataFrame([{"telemetry_id": f"DF-TEL-{i}", "corridor_id": "SYNTHETIC_TEST_CORRIDOR", "observation_timestamp": datetime.datetime.fromtimestamp(base_time + i * 86400, tz=datetime.timezone.utc), "publication_timestamp": datetime.datetime.fromtimestamp(base_time + i * 86400 + 3600, tz=datetime.timezone.utc), "significant_wave_height_m": 1.6, "sar_dark_vessel_ratio": 0.2, "anchorage_waiting_hours": 15.0} for i in range(10)])
+
+    res_df = engine.evaluate(incidents=df_incidents, telemetry=df_telemetry)
+    assert res_df.raw_incident_count == 10
+    assert res_df.jwc_result.actuarial_7d_war_risk_ap_bps >= 0.0
+
+
+def test_sdk_corridor_and_vessel_switching(tmp_path: Path) -> None:
     """Test switching corridors and vessel profiles changes risk metrics and pricing."""
+    # Test loading configs with default config_dir from an external directory
+    import os
+    orig_cwd = os.getcwd()
+    try:
+        os.chdir(tmp_path)
+        # Should load seamlessly using packaged configs fallback
+        engine_escravos = mtr.MaritimeRiskEngine.from_config_files(
+            corridor_id="GOG_ESCRAVOS_FORCADOS_APPROACH",
+            vessel_profile_id="VLCC_LNG_CARRIER_160M",
+        )
+        assert engine_escravos.corridor_spec.corridor_id == "GOG_ESCRAVOS_FORCADOS_APPROACH"
+        assert engine_escravos.vessel_spec.insured_vessel_usd == 160_000_000.0
+    finally:
+        os.chdir(orig_cwd)
+
     configs_dir = Path(__file__).resolve().parent.parent.parent / "configs"
 
     # Profile 1: Suezmax in Bonny/Brass
@@ -174,10 +205,11 @@ def test_sdk_corridor_and_vessel_switching() -> None:
 
 
 def test_custom_pricer_and_source_plugin_registration() -> None:
-    """Test custom ActuarialPricerPort and IncidentSourcePort registration via PluginRegistry."""
+    """Test custom ActuarialPricerPort and IncidentSourcePort registration via PluginRegistry and @decorator."""
     from core.jwc_pricer import JWCPricingResult
 
-    # 1. Define custom pricer satisfying ActuarialPricerPort
+    # 1. Register custom pricer satisfying ActuarialPricerPort via @default_registry decorator
+    @default_registry.register_pricer("custom_syndicate_pricer")
     class CustomSyndicatePricer:
         def price_transit(
             self,
@@ -187,8 +219,7 @@ def test_custom_pricer_and_source_plugin_registration() -> None:
             vessel_spec: VesselProfileSpec,
             corridor_spec: CorridorSpec,
         ) -> JWCPricingResult:
-            # Fixed flat rate logic for custom Lloyd's syndicate
-            flat_rate_bps = 33.33
+            flat_rate_bps = 42.42
             expected_loss = vessel_spec.insured_vessel_usd * (flat_rate_bps / 10000.0)
             return JWCPricingResult(
                 calibrated_7d_breach_prob=breach_prob_7d,
@@ -216,20 +247,29 @@ def test_custom_pricer_and_source_plugin_registration() -> None:
     assert isinstance(CustomSyndicatePricer(), ActuarialPricerPort)
     assert isinstance(CustomMockIncidentSource(), IncidentSourcePort)
 
-    # 3. Register into custom registry
-    registry = PluginRegistry()
-    registry.register_pricer("custom_syndicate", CustomSyndicatePricer())
-    registry.register_incident_source("custom_mock_source", CustomMockIncidentSource())
+    # 3. Prove default_registry resolved the decorated pricer
+    assert "custom_syndicate_pricer" in default_registry.list_pricers()
+    engine_custom = mtr.MaritimeRiskEngine(pricer_name="custom_syndicate_pricer")
+    res_custom = engine_custom.evaluate()
+    assert res_custom.jwc_result.actuarial_7d_war_risk_ap_bps == 42.42
 
-    assert "custom_syndicate" in registry.list_pricers()
-    assert "custom_mock_source" in registry.list_feed_adapters()
-    retrieved = registry.get_pricer("custom_syndicate")
-    assert isinstance(retrieved, CustomSyndicatePricer)
+    # 4. Prove custom registry instantiation and evaluate_from_sources
+    custom_registry = PluginRegistry(auto_discover=False)
+    custom_registry.register_pricer("custom_syndicate_pricer", CustomSyndicatePricer())
+    custom_registry.register_incident_source("mock_source", CustomMockIncidentSource())
 
-    # 4. Instantiate engine with custom registry and custom pricer
-    engine = mtr.MaritimeRiskEngine(registry=registry, pricer_name="custom_syndicate")
-    res = engine.evaluate()
-    assert res.jwc_result.actuarial_7d_war_risk_ap_bps == 33.33
+    class CustomMockTelemetrySource:
+        def fetch_telemetry(
+            self, corridor_id: str, as_of: datetime.datetime | None = None
+        ) -> list[CivilianSensorTelemetry]:
+            return []
+
+    engine_sources = mtr.MaritimeRiskEngine(registry=custom_registry, pricer_name="custom_syndicate_pricer")
+    res_sources = engine_sources.evaluate_from_sources(
+        incident_source=CustomMockIncidentSource(),
+        telemetry_source=CustomMockTelemetrySource(),
+    )
+    assert res_sources.jwc_result.actuarial_7d_war_risk_ap_bps == 42.42
 
 
 def test_bonny_brass_default_reproduces_exact_baseline() -> None:

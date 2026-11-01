@@ -1,0 +1,22 @@
+{
+  "STANDARD_SUEZMAX_85M": {
+    "vessel_profile_id": "STANDARD_SUEZMAX_85M",
+    "description": "Standard Suezmax crude tanker (85M USD insured hull)",
+    "insured_vessel_usd": 85000000.0,
+    "daily_demurrage_usd": 45000.0,
+    "daily_escort_cost_usd": 18500.0,
+    "catastrophic_boarding_loss_usd": 3500000.0,
+    "single_vessel_exposure_factor": 0.25,
+    "delay_days_per_cvar_unit": 0.85
+  },
+  "VLCC_LNG_CARRIER_160M": {
+    "vessel_profile_id": "VLCC_LNG_CARRIER_160M",
+    "description": "Very Large Crude Carrier / LNG Carrier (160M USD insured hull)",
+    "insured_vessel_usd": 160000000.0,
+    "daily_demurrage_usd": 75000.0,
+    "daily_escort_cost_usd": 22000.0,
+    "catastrophic_boarding_loss_usd": 5000000.0,
+    "single_vessel_exposure_factor": 0.20,
+    "delay_days_per_cvar_unit": 0.85
+  }
+}

@@ -36,7 +36,7 @@ maritime-risk = "maritime_risk.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["maritime_risk*", "core*", "application*", "infrastructure*"]
+include = ["maritime_risk*"]
 
 [tool.setuptools.package-data]
-maritime_risk = ["py.typed"]
+maritime_risk = ["py.typed", "configs/*.json"]
