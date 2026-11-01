@@ -31,6 +31,7 @@ def shrink_gpd_parameters(
     prior_sigma: Optional[float] = None,
     kappa: Optional[float] = None,
     spec: Optional[EmpiricalBayesSpec] = None,
+    xi_max: Optional[float] = None,
 ) -> tuple[float, float, float]:
     """Estimate and shrink GPD parameters via Empirical Bayes.
 
@@ -46,6 +47,8 @@ def shrink_gpd_parameters(
         Shrinkage weight parameter (degrees of freedom for prior).
     spec : Optional[EmpiricalBayesSpec]
         Empirical Bayes specification. Defaults to EmpiricalBayesSpec().
+    xi_max : Optional[float]
+        Maximum allowed shape parameter (defaults to spec.xi_max).
 
     Returns
     -------
@@ -56,6 +59,7 @@ def shrink_gpd_parameters(
     p_xi = b_spec.prior_xi if prior_xi is None else float(prior_xi)
     p_sigma = b_spec.prior_sigma if prior_sigma is None else float(prior_sigma)
     p_kappa = b_spec.kappa if kappa is None else float(kappa)
+    p_xi_max = float(xi_max) if xi_max is not None else float(getattr(b_spec, "xi_max", 0.95))
 
     arr = np.asarray(local_exceedances, dtype=np.float64)
     arr = arr[np.isfinite(arr) & (arr > 0.0)]
@@ -104,8 +108,8 @@ def shrink_gpd_parameters(
     xi_shrunk = float(w * xi_local + (1.0 - w) * p_xi)
     sigma_shrunk = float(w * sigma_local + (1.0 - w) * p_sigma)
 
-    # Final domain bounds ensuring heavy-tail shrinkage band [0.05, 0.25]
-    xi_shrunk = min(max(xi_shrunk, 0.05), 0.25)
+    # Bound shrunk shape parameter by spec.xi_max to prevent infinite-mean divergence (xi >= 1.0)
+    xi_shrunk = float(min(xi_shrunk, p_xi_max))
 
     return float(xi_shrunk), float(sigma_shrunk), float(w)
 

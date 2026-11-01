@@ -35,6 +35,7 @@ class CorridorSpec(BaseModel):
     prior_sigma: float = 1.50
     prior_kappa: float = 12.0
     jwc_market_benchmark_bps: float = 15.0
+    operational_state: str = "UNDERWAY"
     incident_dataset_path: Optional[str] = None
     telemetry_dataset_path: Optional[str] = None
 
@@ -125,6 +126,7 @@ class EmpiricalBayesSpec(BaseModel):
     prior_xi: float = 0.18
     prior_sigma: float = 1.50
     kappa: float = 12.0
+    xi_max: float = 0.95
 
 
 class GPDFitterSpec(BaseModel):
@@ -133,6 +135,7 @@ class GPDFitterSpec(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     threshold_u: Optional[float] = None
+    xi_max: float = 0.95
     shape_cap: float = 0.95
     exponential_limit_threshold: float = 1e-6
     tail_alpha: float = 0.99
@@ -161,6 +164,8 @@ class CoxHazardSpec(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    baseline_hazard_underway: float = 0.0005
+    baseline_hazard_anchor: float = 0.0002
     baseline_daily_hazard: float = 0.0005
     beta_mli: float = 2.85
     beta_pmsc_distance_km: float = 0.004
@@ -182,6 +187,16 @@ class MacroGPDScaleSpec(BaseModel):
     mli_inflection_threshold: float = 0.65
 
 
+class MacroRegimeSpec(BaseModel):
+    """Macro-economic liquidity friction (port congestion) regime hyperparameters."""
+
+    model_config = ConfigDict(frozen=True)
+
+    baseline_port_wait_hours: float = 24.0
+    congestion_shock_alpha: float = 0.50
+    max_regime_multiplier: float = 2.0
+
+
 class EngineConfigBundle(BaseModel):
     """Complete consolidated configuration bundle for the Maritime Tail Risk Engine."""
 
@@ -196,6 +211,7 @@ class EngineConfigBundle(BaseModel):
     sprt: SPRTSpec = Field(default_factory=SPRTSpec)
     cox: CoxHazardSpec = Field(default_factory=CoxHazardSpec)
     macro_gpd: MacroGPDScaleSpec = Field(default_factory=MacroGPDScaleSpec)
+    macro_regime: MacroRegimeSpec = Field(default_factory=MacroRegimeSpec)
 
 
 def _resolve_config_path(filename: str, config_dir: str | Path | None = None) -> Path:
@@ -271,15 +287,17 @@ def load_engine_bundle(
 
     hydro_spec = HydroEnvelopeSpec(**raw_hyper.get("hydrodynamics", {}))
     mssa_spec = MSSASpec(**raw_hyper.get("mssa", {}))
+    gpd_spec = GPDFitterSpec(**raw_hyper.get("gpd", {}))
     bayes_spec = EmpiricalBayesSpec(
         prior_xi=corridor_spec.prior_xi,
         prior_sigma=corridor_spec.prior_sigma,
         kappa=corridor_spec.prior_kappa,
+        xi_max=gpd_spec.xi_max,
     )
-    gpd_spec = GPDFitterSpec(**raw_hyper.get("gpd", {}))
     sprt_spec = SPRTSpec(**raw_hyper.get("sprt", {}))
     cox_spec = CoxHazardSpec(**raw_hyper.get("cox_hazard", {}))
     macro_gpd_spec = MacroGPDScaleSpec(**raw_hyper.get("macro_gpd_scale", {}))
+    macro_regime_spec = MacroRegimeSpec(**raw_hyper.get("macro_regime", {}))
 
     return EngineConfigBundle(
         corridor=corridor_spec,
@@ -291,6 +309,7 @@ def load_engine_bundle(
         sprt=sprt_spec,
         cox=cox_spec,
         macro_gpd=macro_gpd_spec,
+        macro_regime=macro_regime_spec,
     )
 
 
@@ -306,6 +325,7 @@ __all__ = [
     "SPRTSpec",
     "CoxHazardSpec",
     "MacroGPDScaleSpec",
+    "MacroRegimeSpec",
     "EngineConfigBundle",
     "load_corridor_spec",
     "load_vessel_spec",

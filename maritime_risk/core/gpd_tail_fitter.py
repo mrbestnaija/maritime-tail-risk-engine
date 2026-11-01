@@ -241,6 +241,7 @@ def fit_pot_gpd(
     p_u = float(n_u / n_total)
     mean_exc = float(np.mean(exceedances))
     var_exc = float(np.var(exceedances, ddof=1)) if n_u > 1 else 0.0
+    xi_cap = float(getattr(g_spec, "xi_max", g_spec.shape_cap))
 
     # Pathological Guard: Zero variance exceedances (all values identical)
     if var_exc <= 1e-12 or n_u < 3:
@@ -250,12 +251,12 @@ def fit_pot_gpd(
         sigma_shrunk = raw_sigma
         w_weight = 0.0
     else:
-        xi_0 = float(np.clip(0.5 * (1.0 - (mean_exc**2) / var_exc), -0.5, g_spec.shape_cap))
+        xi_0 = float(np.clip(0.5 * (1.0 - (mean_exc**2) / var_exc), -0.5, xi_cap))
         sigma_0 = float(max(0.5 * mean_exc * (1.0 + (mean_exc**2) / var_exc), 1e-4))
 
         def neg_log_likelihood(params: list[float]) -> float:
             xi_val, sigma_val = params[0], params[1]
-            if sigma_val <= 1e-6 or xi_val > g_spec.shape_cap or xi_val < -1.0:
+            if sigma_val <= 1e-6 or xi_val > xi_cap or xi_val < -1.0:
                 return 1e12
 
             if abs(xi_val) < 1e-6:
@@ -273,7 +274,7 @@ def fit_pot_gpd(
                 neg_log_likelihood,
                 [xi_0, sigma_0],
                 method="L-BFGS-B",
-                bounds=[(-0.5, g_spec.shape_cap), (1e-4, None)],
+                bounds=[(-0.5, xi_cap), (1e-4, None)],
             )
             if res.success and np.isfinite(res.x[0]) and np.isfinite(res.x[1]):
                 raw_xi = float(res.x[0])
@@ -291,15 +292,15 @@ def fit_pot_gpd(
         else:
             xi_shrunk, sigma_shrunk, w_weight = raw_xi, raw_sigma, 1.0
 
-    xi_shrunk = float(min(max(xi_shrunk, -0.499), g_spec.shape_cap))
+    xi_shrunk = float(min(max(xi_shrunk, -0.499), xi_cap))
     sigma_shrunk = float(max(sigma_shrunk, 0.01))
 
     # Compute residual shock tail
     res_var_95, _ = compute_gpd_var_cvar(
-        threshold_u, xi_shrunk, sigma_shrunk, p_u, alpha=g_spec.secondary_tail_alpha, shape_cap=g_spec.shape_cap
+        threshold_u, xi_shrunk, sigma_shrunk, p_u, alpha=g_spec.secondary_tail_alpha, shape_cap=xi_cap
     )
     res_var_99, res_cvar_99 = compute_gpd_var_cvar(
-        threshold_u, xi_shrunk, sigma_shrunk, p_u, alpha=g_spec.tail_alpha, shape_cap=g_spec.shape_cap
+        threshold_u, xi_shrunk, sigma_shrunk, p_u, alpha=g_spec.tail_alpha, shape_cap=xi_cap
     )
 
     # Compute composite corridor severity tail anchored to MSSA baseline
@@ -411,13 +412,14 @@ def compute_macro_modulated_gpd_tail(
     u_val = base_fit.threshold_u
     xi_val = base_fit.shape_xi
 
+    xi_cap = float(getattr(g_spec, "xi_max", g_spec.shape_cap))
     res_var_95, _ = compute_gpd_var_cvar(
         u_val,
         xi_val,
         sigma_modulated,
         p_u,
         alpha=g_spec.secondary_tail_alpha,
-        shape_cap=g_spec.shape_cap,
+        shape_cap=xi_cap,
     )
     res_var_99, res_cvar_99 = compute_gpd_var_cvar(
         u_val,
@@ -425,7 +427,7 @@ def compute_macro_modulated_gpd_tail(
         sigma_modulated,
         p_u,
         alpha=g_spec.tail_alpha,
-        shape_cap=g_spec.shape_cap,
+        shape_cap=xi_cap,
     )
 
     base = float(baseline)

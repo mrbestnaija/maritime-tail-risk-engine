@@ -86,6 +86,7 @@ class ActuarialPricerPort(Protocol):
         hydro_feasibility: float,
         vessel_spec: VesselProfileSpec,
         corridor_spec: CorridorSpec,
+        regime_multiplier: float = 1.0,
     ) -> "JWCPricingResult":
         """Calculate actuarial fair AP and demurrage exposure for vessel transit."""
         ...

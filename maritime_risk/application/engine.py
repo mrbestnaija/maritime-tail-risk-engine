@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 import hashlib
+import inspect
 import json
 from pathlib import Path
 from typing import Any, Optional, Sequence
@@ -31,6 +32,7 @@ from ..core.metrics import compute_tail_risk_profile
 from ..core.models import CivilianSensorTelemetry, MaritimeIncident
 from ..core.mssa_decomposer import MSSADecompositionResult
 from ..core.ports import IncidentSourcePort, TelemetrySourcePort
+from ..core.regime_switch import compute_regime_multiplier
 from ..core.specs import (
     CorridorSpec,
     EngineConfigBundle,
@@ -202,6 +204,8 @@ class CorridorAuditResult:
             "### IDENTITY & AUDIT BLOCK",
             "- **Engine**: `maritime-tail-risk-engine` (Phase 2B First-Principles & Multi-Sensor Fusion)",
             f"- **Target Geographic Fairway**: {corridor_name} (`{bounds}`)",
+            f"- **Operational State**: `{self.corridor_spec.operational_state}`",
+            f"- **Regime Multiplier**: `{self.jwc_result.regime_multiplier:.4f}x`",
             f"- **Audit Timestamp**: `{timestamp_utc}`",
             "- **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)",
             "- **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)",
@@ -325,9 +329,9 @@ class CorridorAuditResult:
                 "",
                 "| Metric | Empirical Sample Severity | Composite Corridor GPD Severity | Quantile Invariant |",
                 "|---|---|---|---|",
-                f"| **Value at Risk ($\\text{{VaR}}_{{0.95}}$)** | `{self.empirical_risk_metrics.get('max_var_99', 8.5) * 0.95:.2f} / 10.0` | **`{self.gpd_result.composite_corridor_var_95:.2f}`** | Base threshold |",
-                f"| **Value at Risk ($\\text{{VaR}}_{{0.99}}$)** | `{self.empirical_risk_metrics.get('max_var_99', 8.5):.2f} / 10.0` | **`{self.gpd_result.composite_corridor_var_99:.2f}`** | $\\ge \\text{{VaR}}_{{0.95}}$ |",
-                f"| **Expected Shortfall ($\\text{{CVaR}}_{{0.99}}$)** | `{self.empirical_risk_metrics.get('max_cvar_99', 10.0):.2f} / 10.0` | **`{self.gpd_result.composite_corridor_cvar_99:.2f}`** | $\\ge \\text{{VaR}}_{{0.99}}$ |",
+                f"| **Value at Risk ($\\text{{VaR}}_{{0.95}}$)** | `{self.empirical_risk_metrics.get('max_var_99', 8.5) * 0.95:.2f}` | **`{self.gpd_result.composite_corridor_var_95:.2f}`** | Base threshold |",
+                f"| **Value at Risk ($\\text{{VaR}}_{{0.99}}$)** | `{self.empirical_risk_metrics.get('max_var_99', 8.5):.2f}` | **`{self.gpd_result.composite_corridor_var_99:.2f}`** | $\\ge \\text{{VaR}}_{{0.95}}$ |",
+                f"| **Expected Shortfall ($\\text{{CVaR}}_{{0.99}}$)** | `{self.empirical_risk_metrics.get('max_cvar_99', 10.0):.2f}` | **`{self.gpd_result.composite_corridor_cvar_99:.2f}`** | $\\ge \\text{{VaR}}_{{0.99}}$ |",
                 "",
                 "> [!NOTE]",
                 r"> **Open-Ended Composite Severity Scale**: Reconstructed composite metrics combine the secular+seasonal fairway baseline with the GPD extreme tail residual shock without artificial ceiling clamping, preserving strict mathematical quantile ordering: $\text{CVaR}_{0.99} > \text{VaR}_{0.99} > \text{VaR}_{0.95}$.",
@@ -337,6 +341,8 @@ class CorridorAuditResult:
                 "",
                 "| Pricing Parameter / Output | Value | Actuarial Definition |",
                 "|---|---|---|",
+                f"| **Operational State** | **`{self.corridor_spec.operational_state}`** | Navigation posture (e.g. UNDERWAY transit fairway vs AT_ANCHOR anchorage) |",
+                f"| **Macro Regime Multiplier** | **`{self.jwc_result.regime_multiplier:.4f}x`** | Liquidity friction / port waiting congestion multiplier |",
                 f"| **Calibrated 7-Day Corridor Breach Prob** | **`{self.jwc_result.calibrated_7d_breach_prob * 100:.1f}%`** | Probability of corridor risk exceeding baseline in 7d window |",
                 f"| **Single-Vessel Transit Exposure Factor** | **`{self.jwc_result.vessel_transit_exposure_factor * 100:.1f}%`** | Spatial-temporal exposure of single transiting vessel |",
                 f"| **Hydrodynamic Boarding Modulator** | **`{(0.5 + 0.5 * self.jwc_result.hydro_boarding_feasibility) * 100:.1f}%`** | Modulation from sea-state small-skiff boarding feasibility |",
@@ -627,17 +633,45 @@ class MaritimeRiskEngine:
 
         # 6. Actuarial JWC Pricing via registered pricer
         calibrated_p_7d = float(sum(breach_flags) / max(len(breach_flags), 1))
-        composite_cvar = min(
-            10.0, max(gpd_res.composite_corridor_cvar_99, risk_metrics.get("max_cvar_99", 0.0))
+        composite_cvar = max(
+            float(gpd_res.composite_corridor_cvar_99),
+            float(risk_metrics.get("max_cvar_99", 0.0)),
         )
+
+        # Extract anchorage waiting hours from telemetry for forward-looking regime multiplier
+        wait_hours = [
+            float(t.anchorage_waiting_hours)
+            for t in typed_telemetry
+            if t.anchorage_waiting_hours is not None and t.anchorage_waiting_hours >= 0.0
+        ]
+        if wait_hours:
+            current_wait_hours = float(np.median(wait_hours))
+        elif len(Y) > 0 and Y.shape[1] > 3:
+            current_wait_hours = float(np.median(Y[:, 3]))
+        else:
+            current_wait_hours = float(self.hyperparams.macro_regime.baseline_port_wait_hours)
+
+        regime_multiplier = compute_regime_multiplier(
+            current_wait_hours, spec=self.hyperparams.macro_regime
+        )
+
         pricer = self.registry.get_pricer(pricer_name or self.pricer_name)
-        jwc_res = pricer.price_transit(
-            breach_prob_7d=calibrated_p_7d,
-            composite_cvar_99=composite_cvar,
-            hydro_feasibility=hydro_res.boarding_feasibility,
-            vessel_spec=self.vessel_spec,
-            corridor_spec=self.corridor_spec,
-        )
+        call_kwargs: dict[str, Any] = {
+            "breach_prob_7d": calibrated_p_7d,
+            "composite_cvar_99": composite_cvar,
+            "hydro_feasibility": hydro_res.boarding_feasibility,
+            "vessel_spec": self.vessel_spec,
+            "corridor_spec": self.corridor_spec,
+        }
+        try:
+            sig = inspect.signature(pricer.price_transit)
+            if "regime_multiplier" in sig.parameters or any(
+                p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+            ):
+                call_kwargs["regime_multiplier"] = regime_multiplier
+        except Exception:
+            call_kwargs["regime_multiplier"] = regime_multiplier
+        jwc_res = pricer.price_transit(**call_kwargs)
 
         return CorridorAuditResult(
             corridor_spec=self.corridor_spec,

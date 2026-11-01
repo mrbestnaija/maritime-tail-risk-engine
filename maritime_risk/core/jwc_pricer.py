@@ -46,6 +46,8 @@ class JWCPricingResult:
     daily_hazard_rate: float = 0.0
     operational_hardening_index: float = 0.0
     pricing_model: str = "lloyds_first_principles"
+    regime_multiplier: float = 1.0
+    operational_state: str = "UNDERWAY"
 
     @property
     def market_benchmark_bps(self) -> float:
@@ -68,6 +70,8 @@ def compute_jwc_7day_war_risk_ap(
     hydro_boarding_feasibility: float = 1.0,
     vessel_spec: Optional[VesselProfileSpec] = None,
     corridor_spec: Optional[CorridorSpec] = None,
+    regime_multiplier: float = 1.0,
+    operational_state: Optional[str] = None,
 ) -> JWCPricingResult:
     """Calculate first-principles Lloyd's JWC 7-Day Additional Premium and demurrage exposure.
 
@@ -126,10 +130,12 @@ def compute_jwc_7day_war_risk_ap(
         transit_factor = 1.0
 
     p_7d = max(min(float(calibrated_7d_breach_prob), 1.0), 0.0)
-    cvar_99 = max(min(float(composite_cvar_99), 10.0), 0.0)
+    cvar_99 = max(float(composite_cvar_99), 0.0)
     vessel_usd = max(float(vessel_val), 1_000_000.0)
     transit_factor = max(min(transit_factor, 1.0), 0.0)
     hydro_feas = max(min(float(hydro_boarding_feasibility), 1.0), 0.0)
+    reg_mult = max(float(regime_multiplier), 0.0)
+    resolved_op_state = str(operational_state or getattr(c_spec, "operational_state", "UNDERWAY"))
 
     # 1. Effective vessel transit breach probability modulated by exposure & hydrodynamics
     effective_vessel_prob = p_7d * transit_factor * (0.5 + 0.5 * hydro_feas)
@@ -141,8 +147,8 @@ def compute_jwc_7day_war_risk_ap(
     # 3. Catastrophic boarding severity fraction
     catastrophic_loss_usd = (cvar_99 / 10.0) * catastrophic_rate
 
-    # 4. First-principles expected 7-day tail exposure for the transiting vessel
-    expected_7d_tail_loss_usd = effective_vessel_prob * (cvar_99_demurrage_usd + catastrophic_loss_usd)
+    # 4. First-principles expected 7-day tail exposure for the transiting vessel (scaled by regime multiplier)
+    expected_7d_tail_loss_usd = effective_vessel_prob * (cvar_99_demurrage_usd + catastrophic_loss_usd) * reg_mult
 
     # 5. Fair actuarial war-risk AP in basis points (1 bps = 0.0001 of insured hull value)
     actuarial_ap_bps = (expected_7d_tail_loss_usd / vessel_usd) * 10_000.0
@@ -169,6 +175,8 @@ def compute_jwc_7day_war_risk_ap(
         daily_hazard_rate=0.0,
         operational_hardening_index=0.0,
         pricing_model="lloyds_first_principles",
+        regime_multiplier=reg_mult,
+        operational_state=resolved_op_state,
     )
 
 
@@ -205,6 +213,7 @@ def compute_cox_7day_breach_probability(
     vessel_spec: Optional[VesselProfileSpec] = None,
     cox_spec: Optional[CoxHazardSpec] = None,
     hydro_spec: Optional[HydroEnvelopeSpec] = None,
+    corridor_spec: Optional[CorridorSpec] = None,
 ) -> tuple[float, float, float]:
     """Calculate voyage breach probability via Cox Proportional Hazards Model.
 
@@ -243,7 +252,14 @@ def compute_cox_7day_breach_probability(
 
     # Numerical stability clamp for exponent
     clamped_exponent = max(min(log_hazard_exponent, 50.0), -50.0)
-    daily_hazard = c_spec.baseline_daily_hazard * math.exp(clamped_exponent)
+    op_state = (
+        corridor_spec.operational_state if corridor_spec and corridor_spec.operational_state else "UNDERWAY"
+    ).upper()
+    if op_state == "AT_ANCHOR":
+        baseline_hazard = getattr(c_spec, "baseline_hazard_anchor", c_spec.baseline_daily_hazard)
+    else:
+        baseline_hazard = getattr(c_spec, "baseline_hazard_underway", c_spec.baseline_daily_hazard)
+    daily_hazard = baseline_hazard * math.exp(clamped_exponent)
 
     # 7-day cumulative voyage breach probability
     cum_hazard = daily_hazard * c_spec.voyage_window_days
@@ -266,6 +282,7 @@ def price_cox_7day_war_risk_ap(
     corridor_spec: Optional[CorridorSpec] = None,
     cox_spec: Optional[CoxHazardSpec] = None,
     hydro_spec: Optional[HydroEnvelopeSpec] = None,
+    regime_multiplier: float = 1.0,
 ) -> JWCPricingResult:
     """Calculate fair Additional Premium under Cox Proportional Hazards voyage model."""
     v_spec = vessel_spec or VesselProfileSpec()
@@ -281,11 +298,14 @@ def price_cox_7day_war_risk_ap(
         vessel_spec=v_spec,
         cox_spec=cx_spec,
         hydro_spec=h_spec,
+        corridor_spec=c_spec,
     )
 
-    cvar_99 = max(min(float(composite_cvar_99), 10.0), 0.0)
+    cvar_99 = max(float(composite_cvar_99), 0.0)
     vessel_usd = max(float(v_spec.insured_vessel_usd), 1_000_000.0)
     benchmark_bps = float(c_spec.jwc_market_benchmark_bps)
+    reg_mult = max(float(regime_multiplier), 0.0)
+    resolved_op_state = str(getattr(c_spec, "operational_state", "UNDERWAY"))
 
     # Operational delay & demurrage
     delay_days = cvar_99 * v_spec.delay_days_per_cvar_unit
@@ -294,8 +314,8 @@ def price_cox_7day_war_risk_ap(
     # Catastrophic boarding exposure
     catastrophic_loss_usd = (cvar_99 / 10.0) * v_spec.catastrophic_boarding_loss_usd
 
-    # First-principles expected loss: p_breach_7d directly models vessel voyage breach
-    expected_7d_tail_loss_usd = p_breach_7d * (cvar_99_demurrage_usd + catastrophic_loss_usd)
+    # First-principles expected loss: p_breach_7d directly models vessel voyage breach (scaled by regime multiplier)
+    expected_7d_tail_loss_usd = p_breach_7d * (cvar_99_demurrage_usd + catastrophic_loss_usd) * reg_mult
 
     # Fair actuarial AP in basis points (1 bps = 0.0001 of hull)
     actuarial_ap_bps = (expected_7d_tail_loss_usd / vessel_usd) * 10_000.0
@@ -324,6 +344,8 @@ def price_cox_7day_war_risk_ap(
         daily_hazard_rate=daily_hazard,
         operational_hardening_index=ohi,
         pricing_model="cox_proportional_hazards_jwc",
+        regime_multiplier=reg_mult,
+        operational_state=resolved_op_state,
     )
 
 

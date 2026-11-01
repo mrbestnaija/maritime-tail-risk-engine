@@ -8,7 +8,7 @@
     "longitude_min": 6.5,
     "longitude_max": 7.5
   },
-  "timestamp_utc": "2026-11-01T17:58:16.021614+00:00",
+  "timestamp_utc": "2026-11-01T19:50:57.881732+00:00",
   "lineage_hashes": {
     "incident_dataset_sha256": "cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c",
     "civilian_telemetry_dataset_sha256": "c3685e086d228af1f3d0e44314f3c50e5af000406c0d55559d68d77c95157db7",
@@ -36,19 +36,19 @@
     "kappa": 12.0,
     "shrinkage_weight_w": 0.45454545454545453,
     "raw_xi": -0.5,
-    "shrunk_xi": 0.25,
+    "shrunk_xi": 0.3936363636363637,
     "shrunk_sigma": 2.4739945733464217
   },
   "gpd_tail_metrics": {
     "threshold_u": 1.9945412539105871,
     "exceedance_count": 10,
-    "residual_var_95": 6.896502040530839,
-    "residual_var_99": 14.226643128397649,
-    "residual_cvar_99": 21.6026698510219,
+    "residual_var_95": 7.552070646957686,
+    "residual_var_99": 18.023881257115892,
+    "residual_cvar_99": 32.50978568300639,
     "baseline_anchor": 4.462192245933129,
-    "composite_corridor_var_95": 11.358694286463969,
-    "composite_corridor_var_99": 18.68883537433078,
-    "composite_corridor_cvar_99": 26.06486209695503
+    "composite_corridor_var_95": 12.014262892890816,
+    "composite_corridor_var_99": 22.48607350304902,
+    "composite_corridor_cvar_99": 36.97197792893952
   },
   "hydrodynamic_physics": {
     "significant_wave_height_m": 1.6175000000000002,
@@ -67,14 +67,14 @@
   "first_principles_jwc_pricing": {
     "insured_vessel_usd": 85000000.0,
     "calibrated_7d_breach_prob": 0.25,
-    "delay_days": 8.5,
-    "cvar_99_demurrage_usd": 382500.0,
-    "catastrophic_tail_loss_usd": 3500000.0,
-    "expected_7d_tail_loss_usd": 205397.3571220142,
-    "actuarial_7d_war_risk_ap_bps": 24.16439495553108,
+    "delay_days": 31.426181239598595,
+    "cvar_99_demurrage_usd": 1414178.1557819368,
+    "catastrophic_tail_loss_usd": 12940192.275128834,
+    "expected_7d_tail_loss_usd": 1115360.9001448376,
+    "actuarial_7d_war_risk_ap_bps": 131.21892942880442,
     "jwc_market_benchmark_bps": 15.0,
-    "mispricing_spread_bps": 9.16439495553108,
-    "per_transit_mispricing_usd": 77897.35712201417
+    "mispricing_spread_bps": 116.21892942880442,
+    "per_transit_mispricing_usd": 987860.9001448376
   },
   "author_block": {
     "author": "Bestman Ezekwu Enock",

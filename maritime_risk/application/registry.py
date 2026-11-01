@@ -89,13 +89,17 @@ class DefaultLloydsJWCPricer:
         hydro_feasibility: float,
         vessel_spec: VesselProfileSpec,
         corridor_spec: CorridorSpec,
+        regime_multiplier: float = 1.0,
+        **kwargs: Any,
     ) -> JWCPricingResult:
+        reg_mult = kwargs.get("regime_multiplier", regime_multiplier)
         return compute_jwc_7day_war_risk_ap(
             calibrated_7d_breach_prob=breach_prob_7d,
             composite_cvar_99=composite_cvar_99,
             hydro_boarding_feasibility=hydro_feasibility,
             vessel_spec=vessel_spec,
             corridor_spec=corridor_spec,
+            regime_multiplier=reg_mult,
         )
 
 
@@ -125,6 +129,7 @@ class CoxProportionalHazardsJWCPricer:
         hydro_feasibility: float,
         vessel_spec: VesselProfileSpec,
         corridor_spec: CorridorSpec,
+        regime_multiplier: float = 1.0,
         **kwargs: Any,
     ) -> JWCPricingResult:
         mli = kwargs.get("mothership_loitering_idx", self.mothership_loitering_idx)
@@ -133,6 +138,7 @@ class CoxProportionalHazardsJWCPricer:
         wind = kwargs.get("wind_knots", self.wind_knots)
         c_spec = kwargs.get("cox_spec", self.cox_spec)
         h_spec = kwargs.get("hydro_spec", self.hydro_spec)
+        reg_mult = kwargs.get("regime_multiplier", regime_multiplier)
 
         return price_cox_7day_war_risk_ap(
             mothership_loitering_idx=mli,
@@ -144,6 +150,7 @@ class CoxProportionalHazardsJWCPricer:
             corridor_spec=corridor_spec,
             cox_spec=c_spec,
             hydro_spec=h_spec,
+            regime_multiplier=reg_mult,
         )
 
 

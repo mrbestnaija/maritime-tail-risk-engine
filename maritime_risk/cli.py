@@ -174,7 +174,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Telemetry SHA-256: {result.telemetry_sha256}")
             print(f"Incidents: {result.raw_incident_count} raw -> {result.dedup_incident_count} deduplicated")
             print(f"GPD Shrunk xi: {result.gpd_result.shape_xi:.4f} (Raw: {result.gpd_result.raw_xi:.4f}, w: {result.gpd_result.shrinkage_weight_w:.4f})")
-            print(f"Composite CVaR_0.99: {result.jwc_result.composite_cvar_99:.2f} / 10.0")
+            print(f"Operational State: {result.corridor_spec.operational_state}")
+            print(f"Composite CVaR_0.99: {result.jwc_result.composite_cvar_99:.2f}")
+            print(f"Regime Multiplier: {result.jwc_result.regime_multiplier:.4f}x")
             print(f"JWC 7d Fair AP: {result.jwc_result.actuarial_7d_war_risk_ap_bps:.2f} bps (Market: {result.jwc_result.jwc_market_benchmark_bps:.2f} bps)")
             print(f"SPRT State: {result.sprt_result.state}")
 

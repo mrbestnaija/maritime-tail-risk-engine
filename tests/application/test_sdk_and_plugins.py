@@ -307,19 +307,21 @@ def test_bonny_brass_default_reproduces_exact_baseline() -> None:
 
     # Empirical Bayes Shrinkage
     assert res.gpd_result.raw_xi == pytest.approx(-0.5000, abs=1e-4)
-    assert res.gpd_result.shape_xi == pytest.approx(0.2500, abs=1e-4)
+    assert res.gpd_result.shape_xi == pytest.approx(0.3936, abs=1e-3)
     assert res.gpd_result.shrinkage_weight_w == pytest.approx(0.4545, abs=1e-4)
     assert res.gpd_result.scale_sigma == pytest.approx(2.4740, abs=1e-3)
     assert res.gpd_result.threshold_u == pytest.approx(1.9945, abs=1e-3)
 
-    # Quantiles
-    assert res.gpd_result.composite_corridor_cvar_99 == pytest.approx(26.06, abs=0.1)
-    assert res.jwc_result.composite_cvar_99 == pytest.approx(10.0, abs=1e-4)  # Bounded in JWC pricer
+    # Quantiles (Unclamped)
+    assert res.gpd_result.composite_corridor_cvar_99 == pytest.approx(36.97, abs=0.1)
+    assert res.jwc_result.composite_cvar_99 == pytest.approx(36.97, abs=0.1)
 
-    # Pricing
-    assert res.jwc_result.actuarial_7d_war_risk_ap_bps == pytest.approx(24.16, abs=0.02)
+    # Pricing & Regime Scaling
+    assert res.jwc_result.regime_multiplier == pytest.approx(1.4688, abs=1e-3)
+    assert res.jwc_result.operational_state == "UNDERWAY"
+    assert res.jwc_result.actuarial_7d_war_risk_ap_bps == pytest.approx(131.22, abs=0.1)
     assert res.jwc_result.jwc_market_benchmark_bps == pytest.approx(15.0, abs=1e-4)
-    assert res.jwc_result.mispricing_spread_bps == pytest.approx(9.16, abs=0.02)
+    assert res.jwc_result.mispricing_spread_bps == pytest.approx(116.22, abs=0.1)
 
     # SPRT surveillance state
     assert res.sprt_result.state == "RED_ESCALATION_BREACH"

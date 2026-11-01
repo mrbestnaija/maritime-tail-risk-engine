@@ -119,6 +119,6 @@ if __name__ == "__main__":
     print(f"Telemetry SHA-256: {res['telemetry_sha256']}")
     print(f"Incidents: {res['raw_count']} raw -> {res['dedup_count']} deduplicated")
     print(f"GPD Shrunk xi: {res['gpd_result'].shape_xi:.4f} (Raw: {res['gpd_result'].raw_xi:.4f}, w: {res['gpd_result'].shrinkage_weight_w:.4f})")
-    print(f"Composite CVaR_0.99: {res['jwc_result'].composite_cvar_99:.2f} / 10.0")
+    print(f"Composite CVaR_0.99: {res['jwc_result'].composite_cvar_99:.2f}")
     print(f"JWC 7d Fair AP: {res['jwc_result'].actuarial_7d_war_risk_ap_bps:.2f} bps (Market: {res['jwc_result'].jwc_market_benchmark_bps:.2f} bps)")
     print(f"SPRT State: {res['sprt_result'].state}")

@@ -17,6 +17,7 @@
     "benign_residual_threshold": 0.5
   },
   "gpd": {
+    "xi_max": 0.95,
     "shape_cap": 0.95,
     "exponential_limit_threshold": 1e-6,
     "tail_alpha": 0.99,
@@ -35,6 +36,8 @@
     "beta": 0.10
   },
   "cox_hazard": {
+    "baseline_hazard_underway": 0.0005,
+    "baseline_hazard_anchor": 0.0002,
     "baseline_daily_hazard": 0.0005,
     "beta_mli": 2.85,
     "beta_pmsc_distance_km": 0.004,
@@ -49,5 +52,10 @@
     "macro_residual_alpha": 0.30,
     "max_scale_multiplier": 5.0,
     "mli_inflection_threshold": 0.65
+  },
+  "macro_regime": {
+    "baseline_port_wait_hours": 24.0,
+    "congestion_shock_alpha": 0.50,
+    "max_regime_multiplier": 2.0
   }
 }

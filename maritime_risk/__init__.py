@@ -36,6 +36,7 @@ from .core.specs import (
     GPDFitterSpec,
     HydroEnvelopeSpec,
     MacroGPDScaleSpec,
+    MacroRegimeSpec,
     MSSASpec,
     SPRTSpec,
     VesselProfileSpec,
@@ -58,6 +59,7 @@ from .core.ports import (
 
 # Pure Domain Mathematical Functions & Containers
 from .core.empirical_bayes import shrink_gpd_parameters
+from .core.regime_switch import compute_regime_multiplier
 from .core.gpd_tail_fitter import (
     GPDTailRiskEstimate,
     compute_actuarial_war_risk_loading_bps,
@@ -114,6 +116,10 @@ from .application.registry import (
     PluginRegistry,
     default_registry,
 )
+from .presentation.tearsheet_renderer import (
+    MarkdownTearsheetRenderer,
+    render_tearsheet,
+)
 
 compute_skiff_boarding_feasibility = skiff_boarding_feasibility
 
@@ -146,6 +152,7 @@ __all__ = [
     "SPRTSpec",
     "CoxHazardSpec",
     "MacroGPDScaleSpec",
+    "MacroRegimeSpec",
     "EngineConfigBundle",
     "load_corridor_spec",
     "load_vessel_spec",
@@ -183,6 +190,7 @@ __all__ = [
     "compute_operational_hardening_index",
     "compute_cox_7day_breach_probability",
     "price_cox_7day_war_risk_ap",
+    "compute_regime_multiplier",
     "JWCPricingResult",
     "JWCPriceResult",
     "evaluate_sprt_gate",
@@ -194,4 +202,7 @@ __all__ = [
     "brier_score",
     "calibrate_exceedance_probabilities",
     "log_loss",
+    # Presentation
+    "MarkdownTearsheetRenderer",
+    "render_tearsheet",
 ]

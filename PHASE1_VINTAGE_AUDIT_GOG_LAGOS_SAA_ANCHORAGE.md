@@ -8,7 +8,9 @@ This document and the underlying risk model outputs are generated strictly for a
 ### IDENTITY & AUDIT BLOCK
 - **Engine**: `maritime-tail-risk-engine` (Phase 2B First-Principles & Multi-Sensor Fusion)
 - **Target Geographic Fairway**: Gulf of Guinea - Lagos Secure Anchorage Area (SAA) (`6.0°N - 6.5°N, 3.1°E - 3.6°E`)
-- **Audit Timestamp**: `2026-11-01 17:58:17 UTC`
+- **Operational State**: `AT_ANCHOR`
+- **Regime Multiplier**: `1.8073x`
+- **Audit Timestamp**: `2026-11-01 19:50:51 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `fbc423bdaadaa97d7b7cc9f74f2f5991325bf094b48b41337a7d319d6ddd649f`
@@ -106,21 +108,21 @@ Small-sample MLE on GPD shape $\xi$ has extreme variance when exceedance counts 
 
 | Parameter | Raw Optimization Value | Shrunk Empirical Bayes Estimate | Regularization Impact |
 |---|---|---|---|
-| **GPD Shape Parameter ($\xi$)** | `-0.5000` | **`0.2500`** | Regularized toward prior $\xi_0=0.12$; avoids boundary railing |
+| **GPD Shape Parameter ($\xi$)** | `-0.5000` | **`0.3320`** | Regularized toward prior $\xi_0=0.12$; avoids boundary railing |
 | **GPD Scale Parameter ($\sigma$)** | N/A | **`2.1918`** | Regularized scale parameter |
 | **Shrinkage Weight ($w$)** | N/A | **`0.4000`** | Weight assigned to local data vs prior ($N_u=10$) |
-| **Residual $\text{VaR}_{0.95}$** | N/A | **`5.07`** | 95th percentile structural residual shock |
-| **Residual $\text{VaR}_{0.99}$** | N/A | **`11.57`** | 99th percentile structural residual shock |
-| **Residual $\text{CVaR}_{0.99}$** | N/A | **`18.10`** | Mean structural shock conditional on tail breach |
+| **Residual $\text{VaR}_{0.95}$** | N/A | **`5.39`** | 95th percentile structural residual shock |
+| **Residual $\text{VaR}_{0.99}$** | N/A | **`13.35`** | 99th percentile structural residual shock |
+| **Residual $\text{CVaR}_{0.99}$** | N/A | **`22.90`** | Mean structural shock conditional on tail breach |
 
 #### Table 4B: Full Composite Corridor Severity Tail (Reconstructed Baseline + GPD Shock)
 To eliminate the visual scale mismatch where residual shock metrics were compared against raw empirical metrics, the composite corridor severity tail anchors the GPD structural shock to the reconstructed MSSA baseline. Unclamped composite quantiles preserve strict monotonic differentiation:
 
 | Metric | Empirical Sample Severity | Composite Corridor GPD Severity | Quantile Invariant |
 |---|---|---|---|
-| **Value at Risk ($\text{VaR}_{0.95}$)** | `5.70 / 10.0` | **`8.00`** | Base threshold |
-| **Value at Risk ($\text{VaR}_{0.99}$)** | `6.00 / 10.0` | **`14.49`** | $\ge \text{VaR}_{0.95}$ |
-| **Expected Shortfall ($\text{CVaR}_{0.99}$)** | `6.00 / 10.0` | **`21.03`** | $\ge \text{VaR}_{0.99}$ |
+| **Value at Risk ($\text{VaR}_{0.95}$)** | `5.70` | **`8.32`** | Base threshold |
+| **Value at Risk ($\text{VaR}_{0.99}$)** | `6.00` | **`16.28`** | $\ge \text{VaR}_{0.95}$ |
+| **Expected Shortfall ($\text{CVaR}_{0.99}$)** | `6.00` | **`25.83`** | $\ge \text{VaR}_{0.99}$ |
 
 > [!NOTE]
 > **Open-Ended Composite Severity Scale**: Reconstructed composite metrics combine the secular+seasonal fairway baseline with the GPD extreme tail residual shock without artificial ceiling clamping, preserving strict mathematical quantile ordering: $\text{CVaR}_{0.99} > \text{VaR}_{0.99} > \text{VaR}_{0.95}$.
@@ -130,17 +132,19 @@ Replaces naive multiplier heuristics with first-principles underwriting loss exp
 
 | Pricing Parameter / Output | Value | Actuarial Definition |
 |---|---|---|
+| **Operational State** | **`AT_ANCHOR`** | Navigation posture (e.g. UNDERWAY transit fairway vs AT_ANCHOR anchorage) |
+| **Macro Regime Multiplier** | **`1.8073x`** | Liquidity friction / port waiting congestion multiplier |
 | **Calibrated 7-Day Corridor Breach Prob** | **`25.0%`** | Probability of corridor risk exceeding baseline in 7d window |
 | **Single-Vessel Transit Exposure Factor** | **`25.0%`** | Spatial-temporal exposure of single transiting vessel |
 | **Hydrodynamic Boarding Modulator** | **`97.1%`** | Modulation from sea-state small-skiff boarding feasibility |
 | **Effective Single-Vessel Breach Prob** | **`6.07%`** | Net single-vessel breach probability over 7-day transit |
-| **Expected Tail Delay Duration** | **`8.50 days`** | Operational delay days given extreme tail breach |
-| **Tail Demurrage Loss Exposure** | **`$382,500.00 USD`** | Financial demurrage loss at $45,000/day charterparty rate |
-| **Catastrophic Boarding Loss Exposure** | **`$3,500,000.00 USD`** | Expected damage/ransom conditional on tail breach |
-| **Expected 7-Day Tail Loss** | **`$235,527.10 USD`** | Unconditional actuarial expected loss over 7-day transit |
-| **Fair Actuarial War-Risk AP** | **`27.71 bps`** | Fair additional premium rate (1 bps = 0.01% of hull value) |
+| **Expected Tail Delay Duration** | **`21.95 days`** | Operational delay days given extreme tail breach |
+| **Tail Demurrage Loss Exposure** | **`$987,959.36 USD`** | Financial demurrage loss at $45,000/day charterparty rate |
+| **Catastrophic Boarding Loss Exposure** | **`$9,040,150.97 USD`** | Expected damage/ransom conditional on tail breach |
+| **Expected 7-Day Tail Loss** | **`$1,099,453.25 USD`** | Unconditional actuarial expected loss over 7-day transit |
+| **Fair Actuarial War-Risk AP** | **`129.35 bps`** | Fair additional premium rate (1 bps = 0.01% of hull value) |
 | **Lloyd's JWC Market Benchmark** | **`10.00 bps`** | Standard commercial market quote for transit |
-| **Underwriter Commercial Spread** | **`+17.71 bps`** | **`$+150,527.10 USD`** per transit underpricing hazard |
+| **Underwriter Commercial Spread** | **`+119.35 bps`** | **`$+1,014,453.25 USD`** per transit underpricing hazard |
 
 #### Table 4D: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State
 Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$):
