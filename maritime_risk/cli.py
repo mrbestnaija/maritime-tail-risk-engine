@@ -39,23 +39,23 @@ def main(argv: list[str] | None = None) -> int:
     )
     audit_parser.add_argument(
         "--incidents",
-        default="data/sample_gog_osint_vintage.csv",
-        help="Path to incidents CSV or JSON file",
+        default=None,
+        help="Path to incidents CSV or JSON file (default: resolves from corridor spec)",
     )
     audit_parser.add_argument(
         "--telemetry",
-        default="data/gog_bonny_brass_civilian_telemetry.json",
-        help="Path to civilian telemetry JSON file",
+        default=None,
+        help="Path to civilian telemetry JSON file (default: resolves from corridor spec)",
     )
     audit_parser.add_argument(
         "--output-md",
-        default="PHASE1_VINTAGE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md",
-        help="Output path for Markdown tearsheet",
+        default=None,
+        help="Output path for Markdown tearsheet (default: resolves from corridor)",
     )
     audit_parser.add_argument(
         "--output-manifest",
-        default="PHASE1_AUDIT_MANIFEST.json",
-        help="Output path for JSON audit manifest",
+        default=None,
+        help="Output path for JSON audit manifest (default: resolves from corridor)",
     )
     audit_parser.add_argument(
         "--json",
@@ -87,16 +87,48 @@ def main(argv: list[str] | None = None) -> int:
         corridor_id = getattr(args, "corridor", "GOG_BONNY_BRASS_FAIRWAY")
         vessel_id = getattr(args, "vessel", "STANDARD_SUEZMAX_85M")
         config_dir = getattr(args, "config_dir", "configs")
-        incidents_path = Path(getattr(args, "incidents", "data/sample_gog_osint_vintage.csv"))
-        telemetry_path = Path(getattr(args, "telemetry", "data/gog_bonny_brass_civilian_telemetry.json"))
-        output_md = Path(getattr(args, "output_md", "PHASE1_VINTAGE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md"))
-        output_manifest = Path(getattr(args, "output_manifest", "PHASE1_AUDIT_MANIFEST.json"))
 
         engine = MaritimeRiskEngine.from_config_files(
             corridor_id=corridor_id,
             vessel_profile_id=vessel_id,
             config_dir=config_dir,
         )
+
+        c_spec = engine.corridor_spec
+
+        inc_arg = getattr(args, "incidents", None)
+        if inc_arg is not None:
+            incidents_path = Path(inc_arg)
+        elif corridor_id == "GOG_BONNY_BRASS_FAIRWAY" and Path("data/sample_gog_osint_vintage.csv").exists():
+            incidents_path = Path("data/sample_gog_osint_vintage.csv")
+        elif c_spec.incident_dataset_path and Path(c_spec.incident_dataset_path).exists():
+            incidents_path = Path(c_spec.incident_dataset_path)
+        else:
+            incidents_path = Path("data/sample_gog_osint_vintage.csv")
+
+        tel_arg = getattr(args, "telemetry", None)
+        if tel_arg is not None:
+            telemetry_path = Path(tel_arg)
+        elif c_spec.telemetry_dataset_path and Path(c_spec.telemetry_dataset_path).exists():
+            telemetry_path = Path(c_spec.telemetry_dataset_path)
+        else:
+            telemetry_path = Path("data/gog_bonny_brass_civilian_telemetry.json")
+
+        out_md_arg = getattr(args, "output_md", None)
+        if out_md_arg is not None:
+            output_md = Path(out_md_arg)
+        elif corridor_id == "GOG_BONNY_BRASS_FAIRWAY":
+            output_md = Path("PHASE1_VINTAGE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md")
+        else:
+            output_md = Path(f"PHASE1_VINTAGE_AUDIT_{corridor_id}.md")
+
+        out_mf_arg = getattr(args, "output_manifest", None)
+        if out_mf_arg is not None:
+            output_manifest = Path(out_mf_arg)
+        elif corridor_id == "GOG_BONNY_BRASS_FAIRWAY":
+            output_manifest = Path("PHASE1_AUDIT_MANIFEST.json")
+        else:
+            output_manifest = Path(f"PHASE1_AUDIT_MANIFEST_{corridor_id}.json")
 
         raw_incidents = []
         dataset_sha256 = None

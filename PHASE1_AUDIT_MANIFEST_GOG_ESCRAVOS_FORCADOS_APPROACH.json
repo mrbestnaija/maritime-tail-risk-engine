@@ -1,0 +1,87 @@
+{
+  "schema_version": "2.0.0",
+  "audit_type": "PHASE_2B_INSTITUTIONAL_UNDERWRITING_AUDIT",
+  "corridor_id": "GOG_BONNY_BRASS_FAIRWAY",
+  "geographic_bounds": {
+    "latitude_min": 4.0,
+    "latitude_max": 4.5,
+    "longitude_min": 6.5,
+    "longitude_max": 7.5
+  },
+  "timestamp_utc": "2026-11-01T17:54:13.308636+00:00",
+  "lineage_hashes": {
+    "incident_dataset_sha256": "cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c",
+    "civilian_telemetry_dataset_sha256": "c3685e086d228af1f3d0e44314f3c50e5af000406c0d55559d68d77c95157db7",
+    "incident_dataset_path": "data/sample_gog_osint_vintage.csv",
+    "telemetry_dataset_path": "data/gog_bonny_brass_civilian_telemetry.json"
+  },
+  "civilian_osint_hard_firewall": {
+    "certified_civilian_only": true,
+    "restricted_c2_feeds_ingested": false,
+    "providers": [
+      "GFW_SENTINEL1_SAR",
+      "COPERNICUS_ERA5_METOCEAN",
+      "IMF_PORTWATCH_AIS",
+      "NOAA_VIIRS_FIRMS"
+    ]
+  },
+  "tri_state_verification": {
+    "ast_reachability": "PASS",
+    "db_isolation": "PASS",
+    "numeric_falsifier": "PASS"
+  },
+  "empirical_bayes_shrinkage": {
+    "prior_xi": 0.18,
+    "prior_sigma": 1.5,
+    "kappa": 12.0,
+    "shrinkage_weight_w": 0.45454545454545453,
+    "raw_xi": -0.5,
+    "shrunk_xi": 0.25,
+    "shrunk_sigma": 4.906624659135213
+  },
+  "gpd_tail_metrics": {
+    "threshold_u": 0.08216655716923593,
+    "exceedance_count": 10,
+    "residual_var_95": 9.804128736419688,
+    "residual_var_99": 24.341853032240657,
+    "residual_cvar_99": 38.97058140277808,
+    "baseline_anchor": 3.098568897318208,
+    "composite_corridor_var_95": 12.902697633737896,
+    "composite_corridor_var_99": 27.440421929558866,
+    "composite_corridor_cvar_99": 42.06915030009629
+  },
+  "hydrodynamic_physics": {
+    "significant_wave_height_m": 1.3975,
+    "effective_wave_height_m": 1.3975,
+    "boarding_feasibility": 0.8297349539688398,
+    "composite_hazard_score": 1.5495300265368084
+  },
+  "sprt_surveillance": {
+    "state": "RED_ESCALATION_BREACH",
+    "cumulative_llr": 8.70743590339913,
+    "lower_bound_a": -2.251291798606495,
+    "upper_bound_b": 2.8903717578961645,
+    "sample_size": 40,
+    "breach_count": 10
+  },
+  "first_principles_jwc_pricing": {
+    "insured_vessel_usd": 85000000.0,
+    "calibrated_7d_breach_prob": 0.25,
+    "delay_days": 8.5,
+    "cvar_99_demurrage_usd": 382500.0,
+    "catastrophic_tail_loss_usd": 3500000.0,
+    "expected_7d_tail_loss_usd": 221998.3112120006,
+    "actuarial_7d_war_risk_ap_bps": 26.117448377882425,
+    "jwc_market_benchmark_bps": 12.5,
+    "mispricing_spread_bps": 13.617448377882425,
+    "per_transit_mispricing_usd": 115748.31121200061
+  },
+  "author_block": {
+    "author": "Bestman Ezekwu Enock",
+    "role": "Quantitative Risk Architect & Maritime Tail Risk Lead",
+    "designation": "Nigerian Navy officer with 20+ years of operational experience",
+    "github": "https://github.com/mrbestnaija",
+    "orcid": "0009-0008-0112-9273",
+    "linkedin": "https://www.linkedin.com/in/bestman-ezekwu/"
+  }
+}
