@@ -45,6 +45,9 @@ class VesselProfileSpec(BaseModel):
     catastrophic_boarding_loss_usd: float = 3_500_000.0
     single_vessel_exposure_factor: float = 0.25
     delay_days_per_cvar_unit: float = 0.85
+    freeboard_meters: float = 8.2
+    max_sustained_speed_knots: float = 16.5
+    pms_guards_present: bool = True
 
 
 class HydroEnvelopeSpec(BaseModel):
@@ -113,6 +116,32 @@ class SPRTSpec(BaseModel):
     beta: float = 0.10
 
 
+class CoxHazardSpec(BaseModel):
+    """Cox proportional hazards voyage breach hyperparameters."""
+
+    model_config = ConfigDict(frozen=True)
+
+    baseline_daily_hazard: float = 0.0005
+    beta_mli: float = 2.85
+    beta_pmsc_distance_km: float = 0.004
+    beta_ohi: float = -0.15
+    beta_hydro_feasibility: float = 0.75
+    ohi_freeboard_weight: float = 0.40
+    ohi_speed_weight: float = 0.40
+    ohi_armed_guard_weight: float = 2.00
+    voyage_window_days: float = 7.0
+
+
+class MacroGPDScaleSpec(BaseModel):
+    """Macro-modulated GPD scale hyperparameters."""
+
+    model_config = ConfigDict(frozen=True)
+
+    macro_residual_alpha: float = 0.30
+    max_scale_multiplier: float = 5.0
+    mli_inflection_threshold: float = 0.65
+
+
 class EngineConfigBundle(BaseModel):
     """Complete consolidated configuration bundle for the Maritime Tail Risk Engine."""
 
@@ -125,6 +154,8 @@ class EngineConfigBundle(BaseModel):
     bayes: EmpiricalBayesSpec = Field(default_factory=EmpiricalBayesSpec)
     gpd: GPDFitterSpec = Field(default_factory=GPDFitterSpec)
     sprt: SPRTSpec = Field(default_factory=SPRTSpec)
+    cox: CoxHazardSpec = Field(default_factory=CoxHazardSpec)
+    macro_gpd: MacroGPDScaleSpec = Field(default_factory=MacroGPDScaleSpec)
 
 
 def _resolve_config_path(filename: str, config_dir: str | Path | None = None) -> Path:
@@ -206,6 +237,8 @@ def load_engine_bundle(
     )
     gpd_spec = GPDFitterSpec(**raw_hyper.get("gpd", {}))
     sprt_spec = SPRTSpec(**raw_hyper.get("sprt", {}))
+    cox_spec = CoxHazardSpec(**raw_hyper.get("cox_hazard", {}))
+    macro_gpd_spec = MacroGPDScaleSpec(**raw_hyper.get("macro_gpd_scale", {}))
 
     return EngineConfigBundle(
         corridor=corridor_spec,
@@ -215,6 +248,8 @@ def load_engine_bundle(
         bayes=bayes_spec,
         gpd=gpd_spec,
         sprt=sprt_spec,
+        cox=cox_spec,
+        macro_gpd=macro_gpd_spec,
     )
 
 
@@ -228,6 +263,8 @@ __all__ = [
     "EmpiricalBayesSpec",
     "GPDFitterSpec",
     "SPRTSpec",
+    "CoxHazardSpec",
+    "MacroGPDScaleSpec",
     "EngineConfigBundle",
     "load_corridor_spec",
     "load_vessel_spec",

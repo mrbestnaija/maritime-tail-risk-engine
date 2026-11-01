@@ -33,5 +33,21 @@
     "p1": 0.20,
     "alpha": 0.05,
     "beta": 0.10
+  },
+  "cox_hazard": {
+    "baseline_daily_hazard": 0.0005,
+    "beta_mli": 2.85,
+    "beta_pmsc_distance_km": 0.004,
+    "beta_ohi": -0.15,
+    "beta_hydro_feasibility": 0.75,
+    "ohi_freeboard_weight": 0.40,
+    "ohi_speed_weight": 0.40,
+    "ohi_armed_guard_weight": 2.00,
+    "voyage_window_days": 7.0
+  },
+  "macro_gpd_scale": {
+    "macro_residual_alpha": 0.30,
+    "max_scale_multiplier": 5.0,
+    "mli_inflection_threshold": 0.65
   }
 }

@@ -15,12 +15,17 @@ from __future__ import annotations
 
 import importlib.metadata
 import threading
-from typing import Any, Callable, Dict, Optional, TypeVar, cast
+from datetime import datetime, timezone
+from typing import Any, Callable, Dict, Optional, Sequence, TypeVar, cast
 import numpy as np
 
 from ..core.empirical_bayes import shrink_gpd_parameters
 from ..core.gpd_tail_fitter import GPDTailRiskEstimate, fit_pot_gpd
-from ..core.jwc_pricer import JWCPricingResult, compute_jwc_7day_war_risk_ap
+from ..core.jwc_pricer import (
+    JWCPricingResult,
+    compute_jwc_7day_war_risk_ap,
+    price_cox_7day_war_risk_ap,
+)
 from ..core.models import CivilianSensorTelemetry, MaritimeIncident
 from ..core.mssa_decomposer import MSSADecompositionResult, decompose_mssa
 from ..core.ports import (
@@ -32,9 +37,12 @@ from ..core.ports import (
     TelemetrySourcePort,
 )
 from ..core.specs import (
+    DEFAULT_CORRIDOR_ID,
     CorridorSpec,
+    CoxHazardSpec,
     EmpiricalBayesSpec,
     GPDFitterSpec,
+    HydroEnvelopeSpec,
     MSSASpec,
     VesselProfileSpec,
 )
@@ -91,6 +99,255 @@ class DefaultLloydsJWCPricer:
         )
 
 
+class CoxProportionalHazardsJWCPricer:
+    """Cox Proportional Hazards voyage pricer port adapter."""
+
+    def __init__(
+        self,
+        cox_spec: Optional[CoxHazardSpec] = None,
+        hydro_spec: Optional[HydroEnvelopeSpec] = None,
+        mothership_loitering_idx: float = 0.25,
+        distance_pmsc_km: float = 180.0,
+        wave_height_m: float = 1.2,
+        wind_knots: Optional[float] = None,
+    ) -> None:
+        self.cox_spec = cox_spec or CoxHazardSpec()
+        self.hydro_spec = hydro_spec or HydroEnvelopeSpec()
+        self.mothership_loitering_idx = mothership_loitering_idx
+        self.distance_pmsc_km = distance_pmsc_km
+        self.wave_height_m = wave_height_m
+        self.wind_knots = wind_knots
+
+    def price_transit(
+        self,
+        breach_prob_7d: float,
+        composite_cvar_99: float,
+        hydro_feasibility: float,
+        vessel_spec: VesselProfileSpec,
+        corridor_spec: CorridorSpec,
+        **kwargs: Any,
+    ) -> JWCPricingResult:
+        mli = kwargs.get("mothership_loitering_idx", self.mothership_loitering_idx)
+        dist = kwargs.get("distance_pmsc_km", self.distance_pmsc_km)
+        wave_h = kwargs.get("wave_height_m", self.wave_height_m)
+        wind = kwargs.get("wind_knots", self.wind_knots)
+        c_spec = kwargs.get("cox_spec", self.cox_spec)
+        h_spec = kwargs.get("hydro_spec", self.hydro_spec)
+
+        return price_cox_7day_war_risk_ap(
+            mothership_loitering_idx=mli,
+            distance_pmsc_km=dist,
+            wave_height_m=wave_h,
+            composite_cvar_99=composite_cvar_99,
+            wind_knots=wind,
+            vessel_spec=vessel_spec,
+            corridor_spec=corridor_spec,
+            cox_spec=c_spec,
+            hydro_spec=h_spec,
+        )
+
+
+class CopernicusGFWStandardizedAdapter:
+    """Standardized multi-sensor telemetry adapter for Copernicus and GFW feeds.
+
+    Automatically handles sentinel missing-data imputation:
+    - Imputes negative sentinel wave heights (e.g. -999.0) to corridor baseline wave height.
+    - Imputes negative or missing SAR dark vessel ratio, loitering index, etc.
+    - Enforces temporal paradox invariants and constructs valid CivilianSensorTelemetry models.
+    """
+
+    def __init__(
+        self,
+        baseline_wave_height_m: float = 1.35,
+        default_sar_dark_ratio: float = 0.15,
+        default_anchorage_waiting_hours: float = 24.0,
+        default_mothership_loitering_idx: float = 0.25,
+        default_distance_pmsc_km: float = 180.0,
+    ) -> None:
+        self.baseline_wave_height_m = baseline_wave_height_m
+        self.default_sar_dark_ratio = default_sar_dark_ratio
+        self.default_anchorage_waiting_hours = default_anchorage_waiting_hours
+        self.default_mothership_loitering_idx = default_mothership_loitering_idx
+        self.default_distance_pmsc_km = default_distance_pmsc_km
+        self._cached_telemetry: list[CivilianSensorTelemetry] = []
+
+    def _parse_timestamp(self, val: Any) -> datetime:
+        """Parse various timestamp representations into a valid datetime."""
+        if isinstance(val, datetime):
+            return val
+        if isinstance(val, (int, float)):
+            return datetime.fromtimestamp(val, tz=timezone.utc)
+        if isinstance(val, str):
+            clean_str = val.replace("Z", "+00:00")
+            try:
+                return datetime.fromisoformat(clean_str)
+            except Exception:
+                pass
+        return datetime.now(timezone.utc)
+
+    def adapt_record(
+        self,
+        record: dict[str, Any],
+        baseline_wave_height_m: Optional[float] = None,
+    ) -> CivilianSensorTelemetry:
+        """Adapt a single raw record, imputing negative sentinel values."""
+        base_wave = (
+            baseline_wave_height_m
+            if baseline_wave_height_m is not None
+            else self.baseline_wave_height_m
+        )
+
+        # 1. Resolve Wave Height with sentinel imputation
+        raw_wave = (
+            record.get("significant_wave_height_m")
+            if "significant_wave_height_m" in record
+            else record.get("wave_height_m", record.get("VHM0", record.get("hs", base_wave)))
+        )
+        try:
+            wave_val = float(raw_wave)
+            if wave_val < 0.0:  # Sentinel fill-value (e.g. -999.0, -1.0)
+                wave_val = float(base_wave)
+        except (TypeError, ValueError):
+            wave_val = float(base_wave)
+        wave_val = max(min(wave_val, 25.0), 0.0)
+
+        # 2. Resolve SAR Dark Vessel Ratio
+        raw_sar = (
+            record.get("sar_dark_vessel_ratio")
+            if "sar_dark_vessel_ratio" in record
+            else record.get("dark_ratio", record.get("sar_ratio", self.default_sar_dark_ratio))
+        )
+        try:
+            sar_val = float(raw_sar)
+            if sar_val < 0.0:
+                sar_val = float(self.default_sar_dark_ratio)
+        except (TypeError, ValueError):
+            sar_val = float(self.default_sar_dark_ratio)
+        sar_val = max(min(sar_val, 1.0), 0.0)
+
+        # 3. Anchorage Waiting Hours
+        raw_waiting = (
+            record.get("anchorage_waiting_hours")
+            if "anchorage_waiting_hours" in record
+            else record.get("waiting_hours", self.default_anchorage_waiting_hours)
+        )
+        try:
+            waiting_val = float(raw_waiting)
+            if waiting_val < 0.0:
+                waiting_val = float(self.default_anchorage_waiting_hours)
+        except (TypeError, ValueError):
+            waiting_val = float(self.default_anchorage_waiting_hours)
+        waiting_val = max(waiting_val, 0.0)
+
+        # 4. VIIRS Continuity
+        raw_viirs = (
+            record.get("viirs_flaring_continuity_idx")
+            if "viirs_flaring_continuity_idx" in record
+            else record.get("flaring_idx", 1.0)
+        )
+        try:
+            viirs_val = float(raw_viirs)
+            if viirs_val < 0.0:
+                viirs_val = 1.0
+        except (TypeError, ValueError):
+            viirs_val = 1.0
+        viirs_val = max(min(viirs_val, 1.0), 0.0)
+
+        # 5. Mothership Loitering Index
+        raw_mli = (
+            record.get("mothership_loitering_index")
+            if "mothership_loitering_index" in record
+            else record.get("loitering_index", record.get("mli", self.default_mothership_loitering_idx))
+        )
+        try:
+            mli_val = float(raw_mli)
+            if mli_val < 0.0:
+                mli_val = float(self.default_mothership_loitering_idx)
+        except (TypeError, ValueError):
+            mli_val = float(self.default_mothership_loitering_idx)
+        mli_val = max(min(mli_val, 1.0), 0.0)
+
+        # 6. PMSC Distance
+        raw_pmsc = (
+            record.get("distance_pmsc_km")
+            if "distance_pmsc_km" in record
+            else record.get("pmsc_km", self.default_distance_pmsc_km)
+        )
+        try:
+            pmsc_val = float(raw_pmsc)
+            if pmsc_val < 0.0:
+                pmsc_val = float(self.default_distance_pmsc_km)
+        except (TypeError, ValueError):
+            pmsc_val = float(self.default_distance_pmsc_km)
+        pmsc_val = max(min(pmsc_val, 2000.0), 0.0)
+
+        # 7. Timestamps
+        obs_raw = record.get("observation_timestamp") or record.get("time") or record.get("obs_time")
+        obs_dt = self._parse_timestamp(obs_raw)
+
+        pub_raw = record.get("publication_timestamp") or record.get("pub_time")
+        if pub_raw is not None:
+            pub_dt = self._parse_timestamp(pub_raw)
+        else:
+            pub_dt = obs_dt
+
+        # 8. Identifiers
+        tel_id = str(
+            record.get("telemetry_id")
+            or record.get("id")
+            or f"TEL-STD-{int(obs_dt.timestamp())}"
+        )
+        corridor = str(record.get("corridor_id") or DEFAULT_CORRIDOR_ID)
+
+        sar_prov = record.get("sar_provider", "GFW_SENTINEL1_SAR")
+        met_prov = record.get("metocean_provider", "COPERNICUS_ERA5_METOCEAN")
+        ais_prov = record.get("ais_provider", "IMF_PORTWATCH_AIS")
+
+        return CivilianSensorTelemetry(
+            telemetry_id=tel_id,
+            corridor_id=corridor,
+            observation_timestamp=obs_dt,
+            publication_timestamp=pub_dt,
+            sar_provider=sar_prov,
+            metocean_provider=met_prov,
+            ais_provider=ais_prov,
+            significant_wave_height_m=wave_val,
+            sar_dark_vessel_ratio=sar_val,
+            anchorage_waiting_hours=waiting_val,
+            viirs_flaring_continuity_idx=viirs_val,
+            mothership_loitering_index=mli_val,
+            distance_pmsc_km=pmsc_val,
+        )
+
+    def adapt_records(
+        self,
+        records: Sequence[dict[str, Any]],
+        baseline_wave_height_m: Optional[float] = None,
+    ) -> list[CivilianSensorTelemetry]:
+        """Adapt a collection of raw records."""
+        adapted = [
+            self.adapt_record(r, baseline_wave_height_m=baseline_wave_height_m) for r in records
+        ]
+        self._cached_telemetry.extend(adapted)
+        return adapted
+
+    def fetch_telemetry(
+        self, corridor_id: str, as_of: Optional[datetime] = None
+    ) -> Sequence[CivilianSensorTelemetry]:
+        """Fetch telemetry matching corridor, filtered by point-in-time as_of."""
+        results = [t for t in self._cached_telemetry if t.corridor_id == corridor_id]
+        if as_of is not None:
+            results = [t for t in results if t.publication_timestamp <= as_of]
+        return results
+
+    def __call__(self, data: Any) -> Any:
+        if isinstance(data, dict):
+            return self.adapt_record(data)
+        if isinstance(data, (list, tuple)):
+            return self.adapt_records(data)
+        return data
+
+
 class DefaultMarkdownTearsheetRenderer:
     """Default Markdown tear sheet renderer formatting full vintage audit tearsheets."""
 
@@ -143,6 +400,8 @@ class PluginRegistry:
         self.register_decomposer("mssa_svd", DefaultMSSADecomposer())
         self.register_tail_fitter("empirical_bayes_pot_gpd", DefaultTailRiskFitter())
         self.register_pricer("lloyds_jwc_7d_first_principles", DefaultLloydsJWCPricer())
+        self.register_pricer("cox_proportional_hazards_jwc", CoxProportionalHazardsJWCPricer())
+        self.register_feed_adapter("copernicus_gfw_standardized", CopernicusGFWStandardizedAdapter())
         self.register_renderer("markdown_tearsheet", DefaultMarkdownTearsheetRenderer())
         self.register_renderer("json_manifest", DefaultJsonManifestRenderer())
         self.register_renderer("dict_payload", DefaultDictPayloadRenderer())
@@ -340,6 +599,8 @@ __all__ = [
     "DefaultMSSADecomposer",
     "DefaultTailRiskFitter",
     "DefaultLloydsJWCPricer",
+    "CoxProportionalHazardsJWCPricer",
+    "CopernicusGFWStandardizedAdapter",
     "DefaultMarkdownTearsheetRenderer",
     "DefaultJsonManifestRenderer",
     "DefaultDictPayloadRenderer",

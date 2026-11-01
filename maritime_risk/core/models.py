@@ -126,6 +126,12 @@ class CivilianSensorTelemetry(BaseModel):
     viirs_flaring_continuity_idx: float = Field(
         default=1.0, ge=0.0, le=1.0, description="NOAA VIIRS Nightfire shortwave IR flaring continuity index"
     )
+    mothership_loitering_index: float = Field(
+        default=0.25, ge=0.0, le=1.0, description="Sentinel-1 / AIS PAG mothership loitering proximity index"
+    )
+    distance_pmsc_km: float = Field(
+        default=180.0, ge=0.0, le=2000.0, description="Distance to nearest private maritime security escort vessel in km"
+    )
 
     class Config:
         frozen = True

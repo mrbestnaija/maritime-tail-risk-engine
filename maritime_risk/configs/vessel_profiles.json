@@ -7,7 +7,10 @@
     "daily_escort_cost_usd": 18500.0,
     "catastrophic_boarding_loss_usd": 3500000.0,
     "single_vessel_exposure_factor": 0.25,
-    "delay_days_per_cvar_unit": 0.85
+    "delay_days_per_cvar_unit": 0.85,
+    "freeboard_meters": 8.2,
+    "max_sustained_speed_knots": 16.5,
+    "pms_guards_present": true
   },
   "VLCC_LNG_CARRIER_160M": {
     "vessel_profile_id": "VLCC_LNG_CARRIER_160M",
@@ -17,6 +20,9 @@
     "daily_escort_cost_usd": 22000.0,
     "catastrophic_boarding_loss_usd": 5000000.0,
     "single_vessel_exposure_factor": 0.20,
-    "delay_days_per_cvar_unit": 0.85
+    "delay_days_per_cvar_unit": 0.85,
+    "freeboard_meters": 11.5,
+    "max_sustained_speed_knots": 19.5,
+    "pms_guards_present": true
   }
 }

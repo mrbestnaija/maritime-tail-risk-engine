@@ -30,10 +30,12 @@ from .core.specs import (
     DEFAULT_CORRIDOR_ID,
     DEFAULT_VESSEL_PROFILE_ID,
     CorridorSpec,
+    CoxHazardSpec,
     EmpiricalBayesSpec,
     EngineConfigBundle,
     GPDFitterSpec,
     HydroEnvelopeSpec,
+    MacroGPDScaleSpec,
     MSSASpec,
     SPRTSpec,
     VesselProfileSpec,
@@ -60,6 +62,7 @@ from .core.gpd_tail_fitter import (
     GPDTailRiskEstimate,
     compute_actuarial_war_risk_loading_bps,
     compute_gpd_var_cvar,
+    compute_macro_modulated_gpd_tail,
     fit_pot_gpd,
     gpd_cdf,
 )
@@ -72,7 +75,10 @@ from .core.hydro_envelope import (
 from .core.jwc_pricer import (
     JWCPriceResult,
     JWCPricingResult,
+    compute_cox_7day_breach_probability,
     compute_jwc_7day_war_risk_ap,
+    compute_operational_hardening_index,
+    price_cox_7day_war_risk_ap,
     price_jwc_7day_transit,
 )
 from .core.mssa_decomposer import (
@@ -102,7 +108,12 @@ from .application.engine import (
     MaritimeRiskEngine,
     MaritimeTailRiskEngine,
 )
-from .application.registry import PluginRegistry, default_registry
+from .application.registry import (
+    CopernicusGFWStandardizedAdapter,
+    CoxProportionalHazardsJWCPricer,
+    PluginRegistry,
+    default_registry,
+)
 
 compute_skiff_boarding_feasibility = skiff_boarding_feasibility
 
@@ -133,6 +144,8 @@ __all__ = [
     "EmpiricalBayesSpec",
     "GPDFitterSpec",
     "SPRTSpec",
+    "CoxHazardSpec",
+    "MacroGPDScaleSpec",
     "EngineConfigBundle",
     "load_corridor_spec",
     "load_vessel_spec",
@@ -146,11 +159,15 @@ __all__ = [
     "ActuarialPricerPort",
     "ReportRendererPort",
     "AuditSinkPort",
+    # Plugins & Adapters
+    "CoxProportionalHazardsJWCPricer",
+    "CopernicusGFWStandardizedAdapter",
     # Pure Math & Decomposition Functions
     "decompose_mssa",
     "MSSADecompositionResult",
     "hankel_diagonal_averaging",
     "fit_pot_gpd",
+    "compute_macro_modulated_gpd_tail",
     "GPDTailRiskEstimate",
     "compute_gpd_var_cvar",
     "gpd_cdf",
@@ -163,6 +180,9 @@ __all__ = [
     "HydrodynamicEnvelopeResult",
     "compute_jwc_7day_war_risk_ap",
     "price_jwc_7day_transit",
+    "compute_operational_hardening_index",
+    "compute_cox_7day_breach_probability",
+    "price_cox_7day_war_risk_ap",
     "JWCPricingResult",
     "JWCPriceResult",
     "evaluate_sprt_gate",

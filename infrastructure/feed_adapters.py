@@ -1,0 +1,1 @@
+from maritime_risk.infrastructure.feed_adapters import *

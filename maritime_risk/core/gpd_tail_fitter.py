@@ -23,7 +23,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 from .empirical_bayes import shrink_gpd_parameters
-from .specs import EmpiricalBayesSpec, GPDFitterSpec, VesselProfileSpec
+from .specs import EmpiricalBayesSpec, GPDFitterSpec, MacroGPDScaleSpec, VesselProfileSpec
 
 
 @dataclass(frozen=True)
@@ -340,10 +340,139 @@ def fit_pot_gpd(
     )
 
 
+def compute_macro_modulated_gpd_tail(
+    residuals: Sequence[float],
+    baseline: float,
+    macro_risk_residual: float,
+    bayes_spec: Optional[EmpiricalBayesSpec] = None,
+    gpd_spec: Optional[GPDFitterSpec] = None,
+    macro_spec: Optional[MacroGPDScaleSpec] = None,
+    vessel_spec: Optional[VesselProfileSpec] = None,
+) -> GPDTailRiskEstimate:
+    """Compute Peaks-Over-Threshold GPD tail risk with macro-residual scale modulation.
+
+    Dynamically modulates the Empirical-Bayes shrunk scale parameter sigma_shrunk
+    via the MSSA macro/onshore structural shock residual:
+        sigma_t = sigma_shrunk * min(max_scale_multiplier, exp(alpha * R_macro,t))
+
+    Parameters
+    ----------
+    residuals : Sequence[float]
+        Structural shock residual series.
+    baseline : float
+        MSSA secular trend + seasonal baseline anchor.
+    macro_risk_residual : float
+        Onshore/macro structural shock residual R_macro,t.
+    bayes_spec : Optional[EmpiricalBayesSpec]
+        Empirical Bayes prior hyperparameters.
+    gpd_spec : Optional[GPDFitterSpec]
+        POT-GPD fitting hyperparameters.
+    macro_spec : Optional[MacroGPDScaleSpec]
+        Macro-modulation scale hyperparameters.
+    vessel_spec : Optional[VesselProfileSpec]
+        Vessel profile specification.
+
+    Returns
+    -------
+    GPDTailRiskEstimate
+    """
+    b_spec = bayes_spec or EmpiricalBayesSpec()
+    g_spec = gpd_spec or GPDFitterSpec()
+    m_spec = macro_spec or MacroGPDScaleSpec()
+    v_spec = vessel_spec or VesselProfileSpec()
+
+    # 1. Fit standard Empirical-Bayes regularized POT-GPD tail
+    base_fit = fit_pot_gpd(
+        data=residuals,
+        baseline_anchor=baseline,
+        spec=g_spec,
+        vessel_spec=v_spec,
+        bayes_spec=b_spec,
+    )
+
+    # 2. Modulate scale parameter by macro structural shock residual
+    r_macro = float(macro_risk_residual)
+    exponent = max(min(m_spec.macro_residual_alpha * r_macro, 50.0), -50.0)
+    raw_multiplier = math.exp(exponent)
+    scale_multiplier = min(m_spec.max_scale_multiplier, raw_multiplier)
+    sigma_modulated = float(max(base_fit.scale_sigma * scale_multiplier, 0.01))
+
+    # 3. Determine exceedance probability p_u
+    arr = np.asarray(residuals, dtype=np.float64)
+    arr = arr[np.isfinite(arr)]
+    n_total = max(len(arr), 1)
+    p_u = (
+        float(base_fit.exceedance_count / n_total)
+        if base_fit.exceedance_count > 0
+        else g_spec.default_tail_prob
+    )
+
+    # 4. Recompute tail quantiles under modulated scale
+    u_val = base_fit.threshold_u
+    xi_val = base_fit.shape_xi
+
+    res_var_95, _ = compute_gpd_var_cvar(
+        u_val,
+        xi_val,
+        sigma_modulated,
+        p_u,
+        alpha=g_spec.secondary_tail_alpha,
+        shape_cap=g_spec.shape_cap,
+    )
+    res_var_99, res_cvar_99 = compute_gpd_var_cvar(
+        u_val,
+        xi_val,
+        sigma_modulated,
+        p_u,
+        alpha=g_spec.tail_alpha,
+        shape_cap=g_spec.shape_cap,
+    )
+
+    base = float(baseline)
+    comp_var_95 = base + res_var_95
+    comp_var_99 = base + res_var_99
+    comp_cvar_99 = base + res_cvar_99
+
+    # Enforce strict quantile monotonicity
+    if comp_var_99 < comp_var_95:
+        comp_var_99 = comp_var_95
+    if comp_cvar_99 < comp_var_99:
+        comp_cvar_99 = comp_var_99
+
+    loading_bps = compute_actuarial_war_risk_loading_bps(
+        res_cvar_99,
+        insured_vessel_usd=v_spec.insured_vessel_usd,
+        vessel_spec=v_spec,
+        gpd_spec=g_spec,
+    )
+
+    return GPDTailRiskEstimate(
+        shape_xi=xi_val,
+        scale_sigma=sigma_modulated,
+        threshold_u=u_val,
+        exceedance_count=base_fit.exceedance_count,
+        var_95=res_var_95,
+        var_99=res_var_99,
+        cvar_99=res_cvar_99,
+        actuarial_war_risk_loading_bps=loading_bps,
+        insured_vessel_usd=v_spec.insured_vessel_usd,
+        residual_var_95=res_var_95,
+        residual_var_99=res_var_99,
+        residual_cvar_99=res_cvar_99,
+        baseline_anchor=base,
+        composite_corridor_var_95=comp_var_95,
+        composite_corridor_var_99=comp_var_99,
+        composite_corridor_cvar_99=comp_cvar_99,
+        shrinkage_weight_w=base_fit.shrinkage_weight_w,
+        raw_xi=base_fit.raw_xi,
+    )
+
+
 __all__ = [
     "GPDTailRiskEstimate",
     "gpd_cdf",
     "compute_gpd_var_cvar",
     "compute_actuarial_war_risk_loading_bps",
     "fit_pot_gpd",
+    "compute_macro_modulated_gpd_tail",
 ]

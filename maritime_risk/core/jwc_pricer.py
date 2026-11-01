@@ -18,9 +18,11 @@ Pure domain math: ZERO I/O, ZERO PRINT, pure Python/math.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Optional
 
-from .specs import CorridorSpec, VesselProfileSpec
+from .hydro_envelope import skiff_boarding_feasibility
+from .specs import CorridorSpec, CoxHazardSpec, HydroEnvelopeSpec, VesselProfileSpec
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,9 @@ class JWCPricingResult:
     vessel_transit_exposure_factor: float = 1.0
     hydro_boarding_feasibility: float = 1.0
     effective_vessel_breach_prob: float = 0.0
+    daily_hazard_rate: float = 0.0
+    operational_hardening_index: float = 0.0
+    pricing_model: str = "lloyds_first_principles"
 
 
 # Alias for spec naming compatibility
@@ -156,15 +161,173 @@ def compute_jwc_7day_war_risk_ap(
         vessel_transit_exposure_factor=transit_factor,
         hydro_boarding_feasibility=hydro_feas,
         effective_vessel_breach_prob=effective_vessel_prob,
+        daily_hazard_rate=0.0,
+        operational_hardening_index=0.0,
+        pricing_model="lloyds_first_principles",
     )
 
 
 # Alias for backward-compatible naming
 price_jwc_7day_transit = compute_jwc_7day_war_risk_ap
 
+
+def compute_operational_hardening_index(
+    vessel_spec: Optional[VesselProfileSpec] = None,
+    cox_spec: Optional[CoxHazardSpec] = None,
+) -> float:
+    """Compute vessel Operational Hardening Index (OHI).
+
+    Combines freeboard, sustained speed, and armed security guard presence:
+    OHI = w_fb * freeboard + w_spd * speed + (w_guard if guards_present else 0.0)
+    """
+    v_spec = vessel_spec or VesselProfileSpec()
+    c_spec = cox_spec or CoxHazardSpec()
+
+    guard_component = c_spec.ohi_armed_guard_weight if v_spec.pms_guards_present else 0.0
+    ohi = (
+        c_spec.ohi_freeboard_weight * float(v_spec.freeboard_meters)
+        + c_spec.ohi_speed_weight * float(v_spec.max_sustained_speed_knots)
+        + guard_component
+    )
+    return float(max(ohi, 0.0))
+
+
+def compute_cox_7day_breach_probability(
+    mothership_loitering_idx: float,
+    distance_pmsc_km: float,
+    wave_height_m: float,
+    wind_knots: Optional[float] = None,
+    vessel_spec: Optional[VesselProfileSpec] = None,
+    cox_spec: Optional[CoxHazardSpec] = None,
+    hydro_spec: Optional[HydroEnvelopeSpec] = None,
+) -> tuple[float, float, float]:
+    """Calculate voyage breach probability via Cox Proportional Hazards Model.
+
+    lambda_v(t) = lambda_0 * exp(beta_mli * MLI + beta_pmsc * d_PMSC + beta_ohi * OHI + beta_hydro * Phi(Hs, W))
+    P_breach_7d = 1.0 - exp(-lambda_v * T_days)
+
+    Returns
+    -------
+    tuple[float, float, float]
+        (p_breach_7d, daily_hazard_rate, ohi)
+    """
+    c_spec = cox_spec or CoxHazardSpec()
+    v_spec = vessel_spec or VesselProfileSpec()
+    h_spec = hydro_spec or HydroEnvelopeSpec()
+
+    mli = max(min(float(mothership_loitering_idx), 1.0), 0.0)
+    dist_pmsc = max(float(distance_pmsc_km), 0.0)
+    wave_h = max(float(wave_height_m), 0.0)
+
+    # Evaluate small-skiff boarding feasibility using smooth logistic swamping curve
+    hydro_feasibility = skiff_boarding_feasibility(
+        wave_height_m=wave_h,
+        wind_knots=wind_knots,
+        spec=h_spec,
+    )
+
+    ohi = compute_operational_hardening_index(vessel_spec=v_spec, cox_spec=c_spec)
+
+    # Cox log-hazard exponent
+    log_hazard_exponent = (
+        c_spec.beta_mli * mli
+        + c_spec.beta_pmsc_distance_km * dist_pmsc
+        + c_spec.beta_ohi * ohi
+        + c_spec.beta_hydro_feasibility * hydro_feasibility
+    )
+
+    # Numerical stability clamp for exponent
+    clamped_exponent = max(min(log_hazard_exponent, 50.0), -50.0)
+    daily_hazard = c_spec.baseline_daily_hazard * math.exp(clamped_exponent)
+
+    # 7-day cumulative voyage breach probability
+    cum_hazard = daily_hazard * c_spec.voyage_window_days
+    if cum_hazard > 50.0:
+        p_breach_7d = 1.0
+    else:
+        p_breach_7d = 1.0 - math.exp(-cum_hazard)
+
+    p_breach_7d = float(max(min(p_breach_7d, 1.0), 0.0))
+    return p_breach_7d, float(daily_hazard), float(ohi)
+
+
+def price_cox_7day_war_risk_ap(
+    mothership_loitering_idx: float,
+    distance_pmsc_km: float,
+    wave_height_m: float,
+    composite_cvar_99: float,
+    wind_knots: Optional[float] = None,
+    vessel_spec: Optional[VesselProfileSpec] = None,
+    corridor_spec: Optional[CorridorSpec] = None,
+    cox_spec: Optional[CoxHazardSpec] = None,
+    hydro_spec: Optional[HydroEnvelopeSpec] = None,
+) -> JWCPricingResult:
+    """Calculate fair Additional Premium under Cox Proportional Hazards voyage model."""
+    v_spec = vessel_spec or VesselProfileSpec()
+    c_spec = corridor_spec or CorridorSpec()
+    cx_spec = cox_spec or CoxHazardSpec()
+    h_spec = hydro_spec or HydroEnvelopeSpec()
+
+    p_breach_7d, daily_hazard, ohi = compute_cox_7day_breach_probability(
+        mothership_loitering_idx=mothership_loitering_idx,
+        distance_pmsc_km=distance_pmsc_km,
+        wave_height_m=wave_height_m,
+        wind_knots=wind_knots,
+        vessel_spec=v_spec,
+        cox_spec=cx_spec,
+        hydro_spec=h_spec,
+    )
+
+    cvar_99 = max(min(float(composite_cvar_99), 10.0), 0.0)
+    vessel_usd = max(float(v_spec.insured_vessel_usd), 1_000_000.0)
+    benchmark_bps = float(c_spec.jwc_market_benchmark_bps)
+
+    # Operational delay & demurrage
+    delay_days = cvar_99 * v_spec.delay_days_per_cvar_unit
+    cvar_99_demurrage_usd = delay_days * v_spec.daily_demurrage_usd
+
+    # Catastrophic boarding exposure
+    catastrophic_loss_usd = (cvar_99 / 10.0) * v_spec.catastrophic_boarding_loss_usd
+
+    # First-principles expected loss: p_breach_7d directly models vessel voyage breach
+    expected_7d_tail_loss_usd = p_breach_7d * (cvar_99_demurrage_usd + catastrophic_loss_usd)
+
+    # Fair actuarial AP in basis points (1 bps = 0.0001 of hull)
+    actuarial_ap_bps = (expected_7d_tail_loss_usd / vessel_usd) * 10_000.0
+    mispricing_spread_bps = actuarial_ap_bps - benchmark_bps
+    per_transit_mispricing_usd = (mispricing_spread_bps / 10_000.0) * vessel_usd
+
+    hydro_feas = skiff_boarding_feasibility(
+        wave_height_m=wave_height_m, wind_knots=wind_knots, spec=h_spec
+    )
+
+    return JWCPricingResult(
+        calibrated_7d_breach_prob=p_breach_7d,
+        composite_cvar_99=cvar_99,
+        delay_days=delay_days,
+        cvar_99_demurrage_usd=cvar_99_demurrage_usd,
+        catastrophic_tail_loss_usd=catastrophic_loss_usd,
+        expected_7d_tail_loss_usd=expected_7d_tail_loss_usd,
+        actuarial_7d_war_risk_ap_bps=actuarial_ap_bps,
+        jwc_market_benchmark_bps=benchmark_bps,
+        mispricing_spread_bps=mispricing_spread_bps,
+        per_transit_mispricing_usd=per_transit_mispricing_usd,
+        insured_vessel_usd=vessel_usd,
+        vessel_transit_exposure_factor=v_spec.single_vessel_exposure_factor,
+        hydro_boarding_feasibility=hydro_feas,
+        effective_vessel_breach_prob=p_breach_7d,
+        daily_hazard_rate=daily_hazard,
+        operational_hardening_index=ohi,
+        pricing_model="cox_proportional_hazards_jwc",
+    )
+
+
 __all__ = [
     "JWCPricingResult",
     "JWCPriceResult",
     "compute_jwc_7day_war_risk_ap",
     "price_jwc_7day_transit",
+    "compute_operational_hardening_index",
+    "compute_cox_7day_breach_probability",
+    "price_cox_7day_war_risk_ap",
 ]
