@@ -8,7 +8,7 @@ This document and the underlying risk model outputs are generated strictly for a
 ### IDENTITY & AUDIT BLOCK
 - **Engine**: `maritime-tail-risk-engine` (Phase 2B First-Principles & Multi-Sensor Fusion)
 - **Target Geographic Fairway**: Gulf of Guinea - Escravos / Forcados Approach (`5.1°N - 5.8°N, 4.8°E - 5.5°E`)
-- **Audit Timestamp**: `2026-11-01 17:54:13 UTC`
+- **Audit Timestamp**: `2026-11-01 17:58:16 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `5015f464c8143bf70e4acfe045d3894754f747bcdc87ecbbbd3ef14b122008a2`
