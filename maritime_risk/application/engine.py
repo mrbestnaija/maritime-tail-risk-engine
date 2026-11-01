@@ -366,6 +366,7 @@ class CorridorAuditResult:
                 "#### Author Identity Block",
                 "- **Author**: **Bestman Ezekwu Enock**",
                 "- **Role**: Quantitative Risk Architect & Maritime Tail Risk Lead",
+                "- **Designation / Background**: Nigerian Navy officer with 20+ years of operational experience",
                 "- **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)",
                 "- **ORCID**: `0009-0008-0112-9273`",
                 "- **LinkedIn**: [Bestman Ezekwu Enock](https://www.linkedin.com/in/bestman-ezekwu/)",

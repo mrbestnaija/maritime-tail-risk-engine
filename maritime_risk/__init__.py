@@ -117,7 +117,7 @@ from .application.registry import (
 
 compute_skiff_boarding_feasibility = skiff_boarding_feasibility
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __author__ = "Bestman Ezekwu Enock (@mrbestnaija)"
 
 __all__ = [

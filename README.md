@@ -183,10 +183,24 @@ For immediate commercial deployment and academic publication:
 ## Author & Academic Credentials
 
 - **Lead Quantitative Risk Architect**: **Bestman Ezekwu Enock**
+- **Designation / Background**: Nigerian Navy officer with 20+ years of operational experience
 - **Qualifications**: M.Sc. Maritime Security & Warfare | M.A. Peace & Conflict Studies | MITx Statistics & Data Science
 - **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)
 - **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273)
 - **LinkedIn**: [Bestman Ezekwu Enock](https://www.linkedin.com/in/bestman-ezekwu/)
+
+---
+
+## Research Sustainability & Calibrated Sponsorship
+
+Independent open-source maritime research and reproducible empirical verification are supported through conservative, calibrated community sponsorship tiers:
+
+- **$15 / month (Compute & Data Feed Archival Support)**: Offsets continuous CI/CD compute, automated unit-test verification, and public civilian satellite telemetry storage.
+- **$50 / month (Independent Academic Research Sustainability)**: Directly supports open-access paper publication, reproducible vintage audit tear sheets, and independent empirical methodology.
+
+Higher-tier institutional retainers are deliberately shelved until multiple public vintage audit tear sheets earn peer review.
+
+Sponsor the project directly via [GitHub Sponsors](https://github.com/sponsors/mrbestnaija) or verify researcher credentials on [ORCID](https://orcid.org/0009-0008-0112-9273) and [LinkedIn](https://www.linkedin.com/in/bestman-ezekwu/). See [`.github/SPONSORS_PROFILE.md`](.github/SPONSORS_PROFILE.md) for full details.
 
 ---
 

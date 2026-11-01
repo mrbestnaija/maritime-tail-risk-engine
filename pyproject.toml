@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "maritime-tail-risk-engine"
-version = "0.3.0"
+version = "0.3.1"
 description = "Institutional Pluggable Tail Risk Underwriting SDK for Maritime Security OSINT & Civilian Satellite Feeds"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "Bestman Ezekwu Enock", email = "bestman@example.com" }
+    { name = "Bestman Ezekwu Enock", email = "ezekwu77@gmail.com" }
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -31,6 +31,12 @@ dependencies = [
 
 [project.scripts]
 maritime-risk = "maritime_risk.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/mrbestnaija/maritime-tail-risk-engine"
+ORCID = "https://orcid.org/0009-0008-0112-9273"
+LinkedIn = "https://www.linkedin.com/in/bestman-ezekwu/"
+Funding = "https://github.com/sponsors/mrbestnaija"
 
 [project.entry-points."maritime_risk.plugins"]
 

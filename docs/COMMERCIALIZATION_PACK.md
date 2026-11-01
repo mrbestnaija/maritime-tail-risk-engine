@@ -44,7 +44,7 @@ This deployment pack contains three production-ready assets built directly from 
 > 
 > Static war-risk benchmarks and raw OSINT incident feeds in the Gulf of Guinea suffer from two quantifiable blind spots: a **3.40-day mean reporting lag** that masks active surge risk by up to **34.8%**, and **monsoon sea-state harmonics** that trigger false-alarm security escort deployments.
 > 
-> I have just published an open-source, cryptographically verifiable corridor risk engine (`maritime-tail-risk-engine`) combining 20 years of West African maritime operational domain experience with MITx statistical modeling (Multivariate Singular Spectrum Analysis + Empirical Bayes Generalized Pareto tail fitting) over 100% public civilian satellite and metocean feeds (Copernicus ERA5, Sentinel-1 SAR dark-vessel ratios, IMF PortWatch loitering).
+> I have just published an open-source, cryptographically verifiable corridor risk engine (`maritime-tail-risk-engine`) combining my background as a Nigerian Navy officer with 20+ years of operational experience with MITx statistical modeling (Multivariate Singular Spectrum Analysis + Empirical Bayes Generalized Pareto tail fitting) over 100% public civilian satellite and metocean feeds (Copernicus ERA5, Sentinel-1 SAR dark-vessel ratios, IMF PortWatch loitering).
 > 
 > On the **Bonny–Brass Fairway (`4.0°N–4.5°N, 6.5°E–7.5°E`)**, the engine's current tear sheet demonstrates:
 > 
@@ -57,8 +57,9 @@ This deployment pack contains three production-ready assets built directly from 
 > 
 > Best regards,  
 > **Bestman Ezekwu Enock**  
+> Nigerian Navy officer with 20+ years of operational experience  
 > M.Sc. Maritime Security & Warfare | M.A. Peace & Conflict Studies | MITx Statistics & Data Science  
-> GitHub: [https://github.com/mrbestnaija/maritime-tail-risk-engine](https://github.com/mrbestnaija/maritime-tail-risk-engine) | ORCID: `0009-0008-0112-9273`  
+> GitHub: [https://github.com/mrbestnaija/maritime-tail-risk-engine](https://github.com/mrbestnaija/maritime-tail-risk-engine) | ORCID: `0009-0008-0112-9273` | LinkedIn: [https://www.linkedin.com/in/bestman-ezekwu/](https://www.linkedin.com/in/bestman-ezekwu/)  
 
 ---
 
