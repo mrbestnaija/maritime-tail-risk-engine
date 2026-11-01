@@ -2,6 +2,9 @@
 
 This deployment pack contains three production-ready assets built directly from the verified outputs of `maritime-tail-risk-engine` (commit `main`, Gulf of Guinea Bonny & Brass Fairway vintage audit).
 
+> [!NOTE]
+> **Phase 1 Grounding & Research Disclaimer**: All assets in this commercialization pack represent academic and quantitative research formulations derived deterministically from the public Phase 1 open-source intelligence (OSINT) vintage audit baseline. They are intended for academic review, risk committee methodology evaluation, and statistical analysis—not as speculative live commercial pricing tariffs or nautical clearance. All community funding is strictly calibrated to $15/mo compute support and $50/mo research sustainability; high-tier retainers are deliberately shelved.
+
 ---
 
 ## Asset 1: The Executive LinkedIn Launch Post

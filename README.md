@@ -3,11 +3,12 @@
 **Point-in-Time MSSA, Empirical Bayes POT-GPD, and SPRT Maritime Corridor Tail-Risk & Underwriting Engine (100% Public Civilian OSINT)**
 
 [![Python 3.14](https://img.shields.io/badge/python-3.14.3-blue.svg)](https://www.python.org/)
-[![Tests: 48 Passed](https://img.shields.io/badge/tests-48%20passed%20(1.10s)-brightgreen.svg)](#verification--test-suite)
-[![Verification: Tri--State PASS](https://img.shields.io/badge/verification-tri--state%20PASS%20(0.36s)-brightgreen.svg)](#tri-state-cli-verification)
+[![Tests: 56 Passed](https://img.shields.io/badge/tests-56%20passed%20(1.08s)-brightgreen.svg)](#verification--test-suite)
+[![Verification: Quad--Gate PASS](https://img.shields.io/badge/verification-quad--gate%20PASS%20(0.37s)-brightgreen.svg)](#defense-in-depth-python-native-verification)
 [![OSINT: 100% Civilian](https://img.shields.io/badge/OSINT-100%25%20Civilian%20Only-success.svg)](#civilian-mda-hard-firewall)
 [![Fairway: GoG Bonny/Brass](https://img.shields.io/badge/fairway-GoG%20Bonny%2FBrass%20(4.0°N--4.5°N)-orange.svg)](#identity--fairway-parameters)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Governance: Verified](https://img.shields.io/badge/governance-binding%20rules-blue.svg)](GOVERNANCE_AND_OPERATING_RULES.md)
 
 ---
 
@@ -91,12 +92,13 @@ maritime-tail-risk-engine/
 │   └── gog_bonny_brass_civilian_telemetry.json  # 40-row multi-sensor civilian MDA telemetry
 ├── docs/                               # Commercialization & Academic Packs
 │   └── COMMERCIALIZATION_PACK.md       # LinkedIn Launch Post, B2B Outreach Email, Paper #1 Blueprint
-├── tests/                              # 100% Mock-Free Verification Suite (48 Tests)
+├── tests/                              # 100% Mock-Free Verification Suite (56 Tests)
 │   ├── core/                           # AST boundaries, hypothesis fuzzing, MSSA, GPD, hydro, JWC, SPRT
 │   ├── application/                    # Hygiene, telemetry, isolation, and tear sheet integrity
 │   └── infrastructure/                 # SQLite storage layer C-engine constraint enforcement
-├── verify_repo.py                      # Tri-State self-verification CLI (< 1s execution)
+├── verify_repo.py                      # Quad-Gate self-verification CLI (< 1s execution)
 ├── generate_tear_sheet.py              # Full deterministic audit runner and markdown generator
+├── GOVERNANCE_AND_OPERATING_RULES.md   # Binding Institutional Governance & Operating Rules
 ├── PHASE1_VINTAGE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md  # Generated Underwriting Tear Sheet
 └── PHASE1_AUDIT_MANIFEST.json          # Verifiable Cryptographic Lineage Manifest
 ```
@@ -156,10 +158,10 @@ Generated deterministically from the Bonny & Brass Fairway vintage audit:
 git clone https://github.com/mrbestnaija/maritime-tail-risk-engine.git
 cd maritime-tail-risk-engine
 
-# 2. Run the mock-free pytest suite (48 tests in ~1.1s)
+# 2. Run the mock-free pytest suite (56 tests in ~1.1s)
 python -m pytest tests -v
 
-# 3. Run the Tri-State Self-Verification CLI (< 1.0s)
+# 3. Run the Quad-Gate Self-Verification CLI (< 1.0s)
 python verify_repo.py --target .
 
 # 4. Generate the Underwriting Tear Sheet and Audit Manifest
@@ -171,6 +173,8 @@ python generate_tear_sheet.py
 ## Commercial & Academic Deployment Pack
 
 For immediate commercial deployment and academic publication:
+- 📄 **Governance & Operating Standards**: [`GOVERNANCE_AND_OPERATING_RULES.md`](GOVERNANCE_AND_OPERATING_RULES.md)
+- 📄 **Scientific Whitepaper (arXiv / SSRN Pre-Print)**: [`docs/WHITEPAPER_SSRN_ARXIV.md`](docs/WHITEPAPER_SSRN_ARXIV.md)
 - 📄 **Commercialization Pack**: [`docs/COMMERCIALIZATION_PACK.md`](docs/COMMERCIALIZATION_PACK.md)
   - **Asset 1**: Executive LinkedIn Launch Post
   - **Asset 2**: Direct B2B Outreach Email Template (Lloyd's Underwriters & Offshore Logistics VPs)
