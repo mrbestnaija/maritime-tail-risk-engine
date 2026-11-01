@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from typing import Optional, Sequence
 import numpy as np
 
+from core.specs import MSSASpec, VesselProfileSpec
+
 
 @dataclass(frozen=True)
 class MSSADecompositionResult:
@@ -66,9 +68,11 @@ def decompose_mssa(
     window_length: Optional[int] = None,
     trend_components: Optional[Sequence[int]] = None,
     seasonal_components: Optional[Sequence[int]] = None,
-    risk_threshold: float = 5.0,
-    benign_residual_threshold: float = 0.0,
-    daily_escort_cost_usd: float = 18_500.0,
+    risk_threshold: Optional[float] = None,
+    benign_residual_threshold: Optional[float] = None,
+    daily_escort_cost_usd: Optional[float] = None,
+    spec: Optional[MSSASpec] = None,
+    vessel_spec: Optional[VesselProfileSpec] = None,
 ) -> MSSADecompositionResult:
     """Perform Multivariate Singular Spectrum Analysis (MSSA) decomposition.
 
@@ -81,22 +85,41 @@ def decompose_mssa(
         Channel 2: Sentinel-1 Dark Vessel Ratio
         Channel 3: Anchorage Waiting Hours
     window_length : Optional[int]
-        Window length L satisfying 2 <= L <= floor(T / 2). Defaults to floor(T / 3).
+        Window length L satisfying 2 <= L <= floor(T / 2).
     trend_components : Optional[Sequence[int]]
-        Singular triplet indices assigned to secular trend (default: [0]).
+        Singular triplet indices assigned to secular trend.
     seasonal_components : Optional[Sequence[int]]
-        Singular triplet indices assigned to seasonal harmonics (default: [1, 2]).
-    risk_threshold : float
+        Singular triplet indices assigned to seasonal harmonics.
+    risk_threshold : Optional[float]
         Threshold above which raw incident severity is flagged as high-risk.
-    benign_residual_threshold : float
+    benign_residual_threshold : Optional[float]
         Upper bound for structural residual to be considered benign.
-    daily_escort_cost_usd : float
+    daily_escort_cost_usd : Optional[float]
         Commercial daily private maritime escort vessel cost ($ USD).
+    spec : Optional[MSSASpec]
+        MSSA hyperparameter specification. Defaults to MSSASpec().
+    vessel_spec : Optional[VesselProfileSpec]
+        Vessel profile specification. Defaults to VesselProfileSpec().
 
     Returns
     -------
     MSSADecompositionResult
     """
+    m_spec = spec or MSSASpec()
+    v_spec = vessel_spec or VesselProfileSpec()
+
+    risk_thresh = m_spec.risk_threshold if risk_threshold is None else float(risk_threshold)
+    benign_thresh = (
+        m_spec.benign_residual_threshold
+        if benign_residual_threshold is None
+        else float(benign_residual_threshold)
+    )
+    escort_cost = (
+        v_spec.daily_escort_cost_usd
+        if daily_escort_cost_usd is None
+        else float(daily_escort_cost_usd)
+    )
+
     Y = np.asarray(series_matrix, dtype=np.float64)
     if Y.ndim == 1:
         Y = Y[:, np.newaxis]
@@ -107,10 +130,12 @@ def decompose_mssa(
 
     # Select and validate window length L
     max_L = T // 2
-    if window_length is None:
-        L = max(2, min(T // 3, max_L))
+    target_l = window_length if window_length is not None else m_spec.window_length
+    if target_l is None:
+        divisor = m_spec.window_length_divisor
+        L = max(2, min(T // divisor, max_L))
     else:
-        L = int(window_length)
+        L = int(target_l)
 
     if L < 2 or L > max_L:
         raise ValueError(
@@ -139,20 +164,13 @@ def decompose_mssa(
     evr = np.minimum(evr, 1.0)
 
     # 3. Component Grouping
-    if trend_components is None:
-        trend_idx = [0] if D >= 1 else []
-    else:
-        trend_idx = [i for i in trend_components if 0 <= i < D]
+    effective_trend_comps = m_spec.trend_components if trend_components is None else trend_components
+    trend_idx = [i for i in effective_trend_comps if 0 <= i < D]
 
-    if seasonal_components is None:
-        if D >= 3:
-            seasonal_idx = [1, 2]
-        elif D == 2:
-            seasonal_idx = [1]
-        else:
-            seasonal_idx = []
-    else:
-        seasonal_idx = [i for i in seasonal_components if 0 <= i < D and i not in trend_idx]
+    effective_seasonal_comps = (
+        m_spec.seasonal_components if seasonal_components is None else seasonal_components
+    )
+    seasonal_idx = [i for i in effective_seasonal_comps if 0 <= i < D and i not in trend_idx]
 
     used_idx = set(trend_idx) | set(seasonal_idx)
     residual_idx = [i for i in range(D) if i not in used_idx]
@@ -182,11 +200,11 @@ def decompose_mssa(
     raw_severity = Y[:, 0]
     residual_severity = residual[:, 0]
 
-    false_alarm_mask = (raw_severity >= risk_threshold) & (
-        residual_severity <= benign_residual_threshold
+    false_alarm_mask = (raw_severity >= risk_thresh) & (
+        residual_severity <= benign_thresh
     )
     avoided_days = int(np.sum(false_alarm_mask))
-    escort_savings = float(avoided_days * daily_escort_cost_usd)
+    escort_savings = float(avoided_days * escort_cost)
 
     return MSSADecompositionResult(
         trend=trend,
@@ -197,5 +215,12 @@ def decompose_mssa(
         reconstruction_error_frobenius=frobenius_error,
         avoided_seasonal_false_alarm_days=avoided_days,
         escort_opex_savings_usd=escort_savings,
-        daily_escort_cost_usd=float(daily_escort_cost_usd),
+        daily_escort_cost_usd=float(escort_cost),
     )
+
+
+__all__ = [
+    "MSSADecompositionResult",
+    "hankel_diagonal_averaging",
+    "decompose_mssa",
+]

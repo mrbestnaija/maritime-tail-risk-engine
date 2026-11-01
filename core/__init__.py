@@ -22,8 +22,10 @@ from core.hydro_envelope import (
     skiff_boarding_feasibility,
 )
 from core.jwc_pricer import (
+    JWCPriceResult,
     JWCPricingResult,
     compute_jwc_7day_war_risk_ap,
+    price_jwc_7day_transit,
 )
 from core.models import (
     CivilianSensorTelemetry,
@@ -37,12 +39,38 @@ from core.mssa_decomposer import (
     decompose_mssa,
     hankel_diagonal_averaging,
 )
+from core.ports import (
+    ActuarialPricerPort,
+    AuditSinkPort,
+    IncidentSourcePort,
+    ReportRendererPort,
+    SignalDecomposerPort,
+    TailRiskFitterPort,
+    TelemetrySourcePort,
+)
+from core.specs import (
+    CorridorSpec,
+    EmpiricalBayesSpec,
+    EngineConfigBundle,
+    GPDFitterSpec,
+    HydroEnvelopeSpec,
+    MSSASpec,
+    SPRTSpec,
+    VesselProfileSpec,
+    load_corridor_spec,
+    load_engine_bundle,
+    load_model_hyperparams,
+    load_vessel_spec,
+)
 from core.sprt_gates import (
     SPRTGateResult,
+    evaluate_sprt_gate,
     evaluate_sprt_surveillance_gate,
 )
 
-__version__ = "0.2.1"
+compute_skiff_boarding_feasibility = skiff_boarding_feasibility
+
+__version__ = "0.3.0"
 __author__ = "Bestman Ezekwu Enock (@mrbestnaija)"
 
 __all__ = [
@@ -52,6 +80,7 @@ __all__ = [
     "HydrodynamicEnvelopeResult",
     "IsotonicCalibrator",
     "JWCPricingResult",
+    "JWCPriceResult",
     "MSSADecompositionResult",
     "MaritimeIncident",
     "PlattCalibrator",
@@ -64,13 +93,35 @@ __all__ = [
     "compute_actuarial_war_risk_loading_bps",
     "compute_gpd_var_cvar",
     "compute_jwc_7day_war_risk_ap",
+    "price_jwc_7day_transit",
     "decompose_mssa",
     "evaluate_hydrodynamic_envelope",
     "evaluate_sprt_surveillance_gate",
+    "evaluate_sprt_gate",
     "fit_pot_gpd",
     "gpd_cdf",
     "hankel_diagonal_averaging",
     "log_loss",
     "shrink_gpd_parameters",
     "skiff_boarding_feasibility",
+    "compute_skiff_boarding_feasibility",
+    "CorridorSpec",
+    "VesselProfileSpec",
+    "HydroEnvelopeSpec",
+    "MSSASpec",
+    "EmpiricalBayesSpec",
+    "GPDFitterSpec",
+    "SPRTSpec",
+    "EngineConfigBundle",
+    "load_corridor_spec",
+    "load_vessel_spec",
+    "load_model_hyperparams",
+    "load_engine_bundle",
+    "IncidentSourcePort",
+    "TelemetrySourcePort",
+    "SignalDecomposerPort",
+    "TailRiskFitterPort",
+    "ActuarialPricerPort",
+    "ReportRendererPort",
+    "AuditSinkPort",
 ]

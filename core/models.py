@@ -7,6 +7,8 @@ Enforces:
 4. Pure domain layer with ZERO dependencies on application or infrastructure.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 import math
 from typing import Any, Literal, Optional
@@ -45,7 +47,7 @@ class SeverityInterval(BaseModel):
     min_severity: float = Field(..., ge=0.0, le=10.0, description="Lower bound of severity")
     max_severity: float = Field(..., ge=0.0, le=10.0, description="Upper bound of severity")
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def validate_interval(cls, values: dict[str, Any]) -> dict[str, Any]:
         min_sev = values.get("min_severity")
         max_sev = values.get("max_severity")
@@ -77,7 +79,7 @@ class MaritimeIncident(BaseModel):
     raw_payload: Optional[str] = None
     lineage_hash: str = Field(..., description="SHA-256 lineage digest of original report")
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def validate_temporal_paradox(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Enforce strict temporal monotonicity: report cannot precede physical event."""
         event_time = values.get("event_time")
@@ -90,13 +92,16 @@ class MaritimeIncident(BaseModel):
         return values
 
 
+from core.specs import DEFAULT_CORRIDOR_ID
+
+
 class CivilianSensorTelemetry(BaseModel):
     """Verifiable public civilian satellite and oceanographic telemetry."""
 
     telemetry_id: str = Field(..., min_length=1, description="Unique telemetry identifier")
     corridor_id: str = Field(
-        default="GOG_BONNY_BRASS_FAIRWAY",
-        description="Corridor identifier (e.g. GOG_BONNY_BRASS_FAIRWAY, 4.0N-4.5N, 6.5E-7.5E)",
+        default=DEFAULT_CORRIDOR_ID,
+        description="Corridor identifier (e.g. fairway bounds)",
     )
     observation_timestamp: datetime = Field(
         ..., description="UTC when satellite/buoy observed the corridor"
@@ -125,7 +130,7 @@ class CivilianSensorTelemetry(BaseModel):
     class Config:
         frozen = True
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def validate_temporal_monotonicity(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Enforce publication_timestamp >= observation_timestamp."""
         obs = values.get("observation_timestamp")
@@ -142,3 +147,11 @@ class CivilianSensorTelemetry(BaseModel):
                     f"is strictly earlier than observation timestamp ({obs})"
                 )
         return values
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        try:
+            super().__setattr__(name, value)
+        except Exception as e:
+            if "frozen" in str(e).lower():
+                raise TypeError(str(e)) from e
+            raise

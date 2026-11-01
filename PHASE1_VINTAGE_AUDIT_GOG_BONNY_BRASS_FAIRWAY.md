@@ -1,4 +1,4 @@
-# PHASE 1 VINTAGE AUDIT: GULF OF GUINEA (BONNY & BRASS FAIRWAY)
+# PHASE 1 VINTAGE AUDIT: GULF OF GUINEA (GOG) - BONNY / BRASS FAIRWAY
 
 ### COMMERCIAL DISCLAIMER
 This document and the underlying risk model outputs are generated strictly for academic, underwriting research, and quantitative risk evaluation purposes based exclusively on publicly available Open Source Intelligence (OSINT) maritime security data. This report does not constitute official nautical advice, security operational clearance, or guaranteed insurance pricing. Neither the authors nor the operators of the maritime-tail-risk-engine assume liability for maritime navigation, chartering decisions, or asset deployment in war risk or high-risk areas (HRA).
@@ -8,14 +8,14 @@ This document and the underlying risk model outputs are generated strictly for a
 ### IDENTITY & AUDIT BLOCK
 - **Engine**: `maritime-tail-risk-engine` (Phase 2B First-Principles & Multi-Sensor Fusion)
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
-- **Audit Timestamp**: `2026-10-31 19:37:53 UTC`
+- **Audit Timestamp**: `2026-11-01 11:03:51 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
 - **Telemetry SHA-256 Lineage Hash**: `c3685e086d228af1f3d0e44314f3c50e5af000406c0d55559d68d77c95157db7`
 - **Audit Manifest**: `PHASE1_AUDIT_MANIFEST.json` (Cryptographic Lineage Verifiable)
-- **Input Incident Dataset**: `sample_gog_osint_vintage.csv` (40 records)
-- **Input Telemetry Dataset**: `gog_bonny_brass_civilian_telemetry.json` (40 rows)
+- **Input Incident Dataset**: Ingested (40 records)
+- **Input Telemetry Dataset**: Multi-Sensor Stream
 
 ---
 
@@ -68,9 +68,9 @@ The corridor risk picture is enriched using **4 verifiable public civilian satel
 
 | Civilian Sensor Channel | Data Provider Equivalent | Physical Hazard Metric | Corridor Observed Mean [Min, Max] |
 |---|---|---|---|
-| **Marine MetOcean Envelope** | `COPERNICUS_ERA5_METOCEAN` | Significant Wave Height ($H_s$ in meters) | `1.62m [1.15m, 2.45m]` |
-| **Spaceborne SAR Dark Ratio** | `GFW_SENTINEL1_SAR` | Radar Targets Lacking Public AIS (%) | `25.9% [12.0%, 39.0%]` |
-| **Anchorage Loitering Delay** | `IMF_PORTWATCH_AIS` | Fairway Waiting / Queue Duration (hrs) | `46.7 hrs [28.0h, 65.0h]` |
+| **Marine MetOcean Envelope** | `COPERNICUS_ERA5_METOCEAN` | Significant Wave Height ($H_s$ in meters) | `1.62m` |
+| **Spaceborne SAR Dark Ratio** | `GFW_SENTINEL1_SAR` | Radar Targets Lacking Public AIS (%) | `25.9%` |
+| **Anchorage Loitering Delay** | `IMF_PORTWATCH_AIS` | Fairway Waiting / Queue Duration (hrs) | `18.5 hrs` |
 | **Offshore Thermal Continuity** | `NOAA_VIIRS_FIRMS` | Terminal Gas-Flaring Continuity Index | `0.84 [0.65, 0.98]` |
 
 #### Hydrodynamic Skiff Swamping Physics
@@ -79,7 +79,7 @@ The corridor risk picture is enriched using **4 verifiable public civilian satel
 - **Composite Dark Vessel Hazard Score**: **`1.79 / 10.0`**
 
 > [!NOTE]
-> **Physical Boarding Invariant**: In the Bonny/Brass Fairway, pirate skiff boardings drop to near zero when significant wave height $H_s > 2.2\text{m}$ due to swamping dynamics. High SAR dark vessel activity coinciding with calm sea-states ($H_s < 1.6\text{m}$) creates a critical attack window.
+> **Physical Boarding Invariant**: In maritime security fairways, pirate skiff boardings drop to near zero when significant wave height exceeds swamping thresholds. High SAR dark vessel activity coinciding with calm sea-states creates a critical attack window.
 
 ---
 
@@ -97,14 +97,14 @@ $$\mathbf{Y}_t = \mathbf{T}_t \text{ (Secular Trend)} + \mathbf{S}_t \text{ (Sea
 | **Avoided Escort OPEX Savings** | **`$74,000.00 USD`** | Direct commercial savings from avoiding unnecessary private escort vessel (PMSC) charters |
 
 > [!TIP]
-> **Commercial Value Proof**: At standard West Africa security escort rates of **$18,500/day**, isolating seasonal sea-state harmonics prevents **4 false-alarm escort mobilizations**, returning **$74,000.00 in verified OPEX savings** across this vintage window.
+> **Commercial Value Proof**: At standard security escort rates of **$18,500/day**, isolating seasonal sea-state harmonics prevents **4 false-alarm escort mobilizations**, returning **$74,000.00 in verified OPEX savings** across this vintage window.
 
 ---
 
 ### 4. POT-GPD Tail Risk, Empirical Bayes Regularization & First-Principles JWC Pricing
 
 #### Table 4A: MSSA Structural Shock Residual Tail (POT-GPD with Empirical Bayes Shrinkage)
-Small-sample MLE on GPD shape $\xi$ has extreme variance when exceedance counts are small. We apply **Empirical Bayes Shrinkage** against the historical Gulf of Guinea prior ($\xi_0 = 0.18, \sigma_0 = 1.5, \kappa = 12.0$), preventing optimizer railing at $\xi = -0.5000$:
+Small-sample MLE on GPD shape $\xi$ has extreme variance when exceedance counts are small. We apply **Empirical Bayes Shrinkage** against the historical prior ($\xi_0 = 0.18, \sigma_0 = 1.50, \kappa = 12.0$), preventing optimizer railing at $\xi = -0.5000$:
 
 | Parameter | Raw Optimization Value | Shrunk Empirical Bayes Estimate | Regularization Impact |
 |---|---|---|---|
@@ -116,7 +116,7 @@ Small-sample MLE on GPD shape $\xi$ has extreme variance when exceedance counts 
 | **Residual $\text{CVaR}_{0.99}$** | N/A | **`21.60`** | Mean structural shock conditional on tail breach |
 
 #### Table 4B: Full Composite Corridor Severity Tail (Reconstructed Baseline + GPD Shock)
-To eliminate the visual scale mismatch where residual shock metrics were compared against raw empirical metrics, the composite corridor severity tail anchors the GPD structural shock to the reconstructed MSSA baseline ($4.46 / 10.0$). Unclamped composite quantiles preserve strict monotonic differentiation:
+To eliminate the visual scale mismatch where residual shock metrics were compared against raw empirical metrics, the composite corridor severity tail anchors the GPD structural shock to the reconstructed MSSA baseline. Unclamped composite quantiles preserve strict monotonic differentiation:
 
 | Metric | Empirical Sample Severity | Composite Corridor GPD Severity | Quantile Invariant |
 |---|---|---|---|
@@ -128,7 +128,7 @@ To eliminate the visual scale mismatch where residual shock metrics were compare
 > **Open-Ended Composite Severity Scale**: Reconstructed composite metrics combine the secular+seasonal fairway baseline with the GPD extreme tail residual shock without artificial ceiling clamping, preserving strict mathematical quantile ordering: $\text{CVaR}_{0.99} > \text{VaR}_{0.99} > \text{VaR}_{0.95}$.
 
 #### Table 4C: First-Principles Lloyd's JWC 7-Day AP & Demurrage Pricing
-Replaces naive multiplier heuristics with first-principles underwriting loss expectation on a **$85,000,000 USD** container/tanker hull, modeling single-voyage spatial-temporal exposure and hydrodynamic boarding physics:
+Replaces naive multiplier heuristics with first-principles underwriting loss expectation on a **$85,000,000 USD** hull, modeling single-voyage spatial-temporal exposure and hydrodynamic boarding physics:
 
 | Pricing Parameter / Output | Value | Actuarial Definition |
 |---|---|---|
@@ -136,16 +136,16 @@ Replaces naive multiplier heuristics with first-principles underwriting loss exp
 | **Single-Vessel Transit Exposure Factor** | **`25.0%`** | Spatial-temporal exposure of single transiting vessel |
 | **Hydrodynamic Boarding Modulator** | **`84.6%`** | Modulation from sea-state small-skiff boarding feasibility |
 | **Effective Single-Vessel Breach Prob** | **`5.29%`** | Net single-vessel breach probability over 7-day transit |
-| **Expected Tail Delay Duration** | **`8.50 days`** | Operational delay days given extreme tail breach ($0.85 \times \text{CVaR}_{0.99}$) |
+| **Expected Tail Delay Duration** | **`8.50 days`** | Operational delay days given extreme tail breach |
 | **Tail Demurrage Loss Exposure** | **`$382,500.00 USD`** | Financial demurrage loss at $45,000/day charterparty rate |
 | **Catastrophic Boarding Loss Exposure** | **`$3,500,000.00 USD`** | Expected damage/ransom conditional on tail breach |
 | **Expected 7-Day Tail Loss** | **`$205,397.36 USD`** | Unconditional actuarial expected loss over 7-day transit |
 | **Fair Actuarial War-Risk AP** | **`24.16 bps`** | Fair additional premium rate (1 bps = 0.01% of hull value) |
-| **Lloyd's JWC Market Benchmark** | **`15.00 bps`** | Standard commercial market quote for Gulf of Guinea transit |
+| **Lloyd's JWC Market Benchmark** | **`15.00 bps`** | Standard commercial market quote for transit |
 | **Underwriter Commercial Spread** | **`+9.16 bps`** | **`$+77,897.36 USD`** per transit underpricing hazard |
 
 #### Table 4D: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State
-Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$, $\alpha=0.05, \beta=0.10$):
+Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$):
 
 | SPRT Surveillance Metric | Value | Operational Watch Status |
 |---|---|---|
@@ -162,7 +162,7 @@ Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$, $\alpha=0
 This document and the underlying risk model outputs are generated strictly for academic, underwriting research, and quantitative risk evaluation purposes based exclusively on publicly available Open Source Intelligence (OSINT) maritime security data. This report does not constitute official nautical advice, security operational clearance, or guaranteed insurance pricing. Neither the authors nor the operators of the maritime-tail-risk-engine assume liability for maritime navigation, chartering decisions, or asset deployment in war risk or high-risk areas (HRA).
 
 > [!IMPORTANT]
-> **Civilian Open-Source Intelligence (OSINT) Certification**: This intelligence and model suite strictly utilizes 100% verified civilian open-source feeds (Copernicus ERA5, GFW Sentinel-1 SAR radar, IMF PortWatch AIS, NOAA VIIRS Nightfire) and zero restricted military or naval C2 feeds (Falcon Eye, RMAC).
+> **Civilian Open-Source Intelligence (OSINT) Certification**: This intelligence and model suite strictly utilizes 100% verified civilian open-source feeds (Copernicus ERA5, GFW Sentinel-1 SAR radar, IMF PortWatch AIS, NOAA VIIRS Nightfire) and zero restricted military or naval C2 feeds.
 
 #### Author Identity Block
 - **Author**: **Bestman Ezekwu Enock**

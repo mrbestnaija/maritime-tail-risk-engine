@@ -1,14 +1,42 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "maritime-tail-risk-engine"
-version = "0.1.0"
-description = "Clean Architecture Tail Risk Underwriting Engine for Maritime Security OSINT"
+version = "0.3.0"
+description = "Institutional Pluggable Tail Risk Underwriting SDK for Maritime Security OSINT & Civilian Satellite Feeds"
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Bestman Ezekwu Enock", email = "bestman@example.com" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Typing :: Typed",
+]
 dependencies = [
     "pydantic>=2.0.0",
+    "numpy>=1.22.0",
+    "scipy>=1.8.0",
     "hypothesis>=6.0.0",
     "pytest>=7.0.0",
 ]
+
+[project.scripts]
+maritime-risk = "maritime_risk.cli:main"
+
+[project.entry-points."maritime_risk.plugins"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["maritime_risk*", "core*", "application*", "infrastructure*"]
+
+[tool.setuptools.package-data]
+maritime_risk = ["py.typed"]

@@ -1,0 +1,38 @@
+{
+  "GOG_BONNY_BRASS_FAIRWAY": {
+    "corridor_id": "GOG_BONNY_BRASS_FAIRWAY",
+    "description": "Gulf of Guinea (GoG) - Bonny / Brass Fairway",
+    "latitude_min": 4.0,
+    "latitude_max": 4.5,
+    "longitude_min": 6.5,
+    "longitude_max": 7.5,
+    "prior_xi": 0.18,
+    "prior_sigma": 1.50,
+    "prior_kappa": 12.0,
+    "jwc_market_benchmark_bps": 15.0
+  },
+  "GOG_ESCRAVOS_FORCADOS_APPROACH": {
+    "corridor_id": "GOG_ESCRAVOS_FORCADOS_APPROACH",
+    "description": "Gulf of Guinea - Escravos / Forcados Approach",
+    "latitude_min": 5.1,
+    "latitude_max": 5.8,
+    "longitude_min": 4.8,
+    "longitude_max": 5.5,
+    "prior_xi": 0.16,
+    "prior_sigma": 1.35,
+    "prior_kappa": 12.0,
+    "jwc_market_benchmark_bps": 12.5
+  },
+  "GOG_LAGOS_SAA_ANCHORAGE": {
+    "corridor_id": "GOG_LAGOS_SAA_ANCHORAGE",
+    "description": "Gulf of Guinea - Lagos Secure Anchorage Area (SAA)",
+    "latitude_min": 6.0,
+    "latitude_max": 6.45,
+    "longitude_min": 3.1,
+    "longitude_max": 3.6,
+    "prior_xi": 0.12,
+    "prior_sigma": 1.10,
+    "prior_kappa": 15.0,
+    "jwc_market_benchmark_bps": 10.0
+  }
+}

@@ -1,16 +1,19 @@
-"""Tri-State Self-Verification CLI (verify_repo.py).
+"""Tri-State Verification CLI (verify_repo.py).
 
-Implements:
+Implements 4 Institutional Verification Gates:
 1. check_ast_reachability_and_boundaries(target_dir):
-   Static AST walk verifying layer import rules and flagging any config constants
+   Static AST walk verifying layer import rules and flagging any dead config constants
    that never reach a conditional sink (PASS | FAIL).
-2. check_db_isolation_guard(target_dir):
-   Verifies SQLite CHECK constraints and sandbox-vs-production PermissionError guards
+2. check_anti_hardcoding_purity(target_dir):
+   AST walk across core mathematical modules verifying zero hardcoded business/corridor/vessel
+   literals and verifying declarative JSON schema binding (PASS | FAIL).
+3. check_db_isolation_guard(target_dir):
+   Verifies SQLite C-engine CHECK constraints and sandbox-vs-production PermissionError guards
    (PASS | FAIL, or SKIP if target repo has no SQLite layer).
-3. check_numeric_calibration_falsifier():
-   Feeds pathological boundary arrays (xi -> 0, zero-variance series, extreme outlier
-   severity) into gpd_tail_fitter.py and calibration.py, asserting zero NaN/Inf outputs,
-   zero 1e-9 million-fold explosions, and unweighted Brier invariance (PASS | FAIL).
+4. check_numeric_calibration_and_sdk_contract(target_dir):
+   Feeds pathological boundary arrays into GPD tail fitter and calibration evaluators,
+   verifying zero NaN/Inf outputs, anti-blowup caps, unweighted Brier invariance, and PEP 561
+   SDK contract conformance (PASS | FAIL).
 
 Execution SLA: Strictly completes in < 10 seconds.
 """
@@ -40,6 +43,11 @@ def check_ast_reachability_and_boundaries(target_dir: Path) -> tuple[str, str]:
     forbidden_modules = {"application", "infrastructure"}
     violations = []
     py_files = list(core_dir.rglob("*.py"))
+
+    # Also check maritime_risk/core if it exists as a separate directory
+    mr_core_dir = target_dir / "maritime_risk" / "core"
+    if mr_core_dir.exists() and mr_core_dir.is_dir():
+        py_files.extend(list(mr_core_dir.rglob("*.py")))
 
     if not py_files:
         return "FAIL", "No Python files found in core/"
@@ -107,6 +115,66 @@ def check_ast_reachability_and_boundaries(target_dir: Path) -> tuple[str, str]:
     return "PASS", f"Zero boundary violations across {len(py_files)} core modules; all constants reachable."
 
 
+def check_anti_hardcoding_purity(target_dir: Path) -> tuple[str, str]:
+    """AST walk verifying math modules contain zero hardcoded domain/business literals."""
+    math_modules = [
+        "hydro_envelope.py",
+        "mssa_decomposer.py",
+        "empirical_bayes.py",
+        "gpd_tail_fitter.py",
+        "jwc_pricer.py",
+        "sprt_gates.py",
+    ]
+
+    banned_floats = {85000000.0, 45000.0, 3500000.0, 18500.0, 1.85, 0.18, 12.0}
+    banned_strings = {"GOG_BONNY_BRASS_FAIRWAY"}
+
+    violations: list[str] = []
+
+    for mod_name in math_modules:
+        file_path = target_dir / "core" / mod_name
+        if not file_path.exists():
+            violations.append(f"Math module not found: {mod_name}")
+            continue
+
+        tree = ast.parse(file_path.read_text(encoding="utf-8"), filename=str(file_path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Constant):
+                val = node.value
+                if isinstance(val, (int, float)) and not isinstance(val, bool):
+                    if float(val) in banned_floats:
+                        violations.append(
+                            f"{mod_name}:{node.lineno} banned hardcoded literal {val}"
+                        )
+                elif isinstance(val, str) and val in banned_strings:
+                    violations.append(
+                        f"{mod_name}:{node.lineno} banned hardcoded string '{val}'"
+                    )
+
+    if violations:
+        return "FAIL", f"Hardcoded domain literals detected in math modules:\n" + "\n".join(violations)
+
+    # Verify configs exist and are loadable
+    configs_dir = target_dir / "configs"
+    required_configs = ["corridors.json", "vessel_profiles.json", "model_hyperparams.json"]
+    for cfg in required_configs:
+        cfg_path = configs_dir / cfg
+        if not cfg_path.exists():
+            return "FAIL", f"Required declarative configuration file missing: {cfg_path}"
+
+    try:
+        from core.specs import load_corridor_spec, load_engine_bundle, load_vessel_spec
+        c_spec = load_corridor_spec("GOG_BONNY_BRASS_FAIRWAY", configs_dir / "corridors.json")
+        v_spec = load_vessel_spec("STANDARD_SUEZMAX_85M", configs_dir / "vessel_profiles.json")
+        bundle = load_engine_bundle(config_dir=configs_dir)
+        if c_spec.corridor_id != "GOG_BONNY_BRASS_FAIRWAY" or v_spec.vessel_profile_id != "STANDARD_SUEZMAX_85M":
+            return "FAIL", "Declarative config loaders returned inconsistent spec identity"
+    except Exception as e:
+        return "FAIL", f"Error loading declarative configuration specs: {e}"
+
+    return "PASS", f"Zero hardcoded domain literals across {len(math_modules)} math modules; declarative specs verified."
+
+
 def check_db_isolation_guard(target_dir: Path) -> tuple[str, str]:
     """Verify SQLite C-engine CHECK constraints and sandbox isolation guards."""
     sqlite_file = target_dir / "infrastructure" / "sqlite_storage.py"
@@ -160,6 +228,18 @@ def check_db_isolation_guard(target_dir: Path) -> tuple[str, str]:
     except sqlite3.IntegrityError:
         pass
 
+    # Telemetry SAR dark vessel ratio bounds check (> 1.0)
+    try:
+        conn.execute(
+            "INSERT INTO civilian_sensor_telemetry (telemetry_id, corridor_id, observation_timestamp, "
+            "publication_timestamp, sar_provider, metocean_provider, ais_provider, "
+            "significant_wave_height_m, sar_dark_vessel_ratio, anchorage_waiting_hours, viirs_flaring_continuity_idx) "
+            "VALUES ('T3', 'COR', '2023-01-15T10:00:00Z', '2023-01-15T12:00:00Z', 'P1', 'P2', 'P3', 2.0, 1.5, 10.0, 0.9)"
+        )
+        return "FAIL", "SQLite failed to reject SAR dark ratio > 1.0 at C-engine layer"
+    except sqlite3.IntegrityError:
+        pass
+
     conn.close()
 
     # 2. Test Sandbox Physical PermissionError Isolation Guard
@@ -173,8 +253,32 @@ def check_db_isolation_guard(target_dir: Path) -> tuple[str, str]:
     return "PASS", "SQLite C-engine CHECK constraints and sandbox isolation guards physically verified."
 
 
-def check_numeric_calibration_falsifier() -> tuple[str, str]:
-    """Feeds pathological boundary arrays into GPD tail fitter and calibration evaluators."""
+def check_numeric_calibration_and_sdk_contract(target_dir: Path) -> tuple[str, str]:
+    """Feeds pathological boundary arrays into GPD tail fitter, asserts stability and SDK contract."""
+    # 1. SDK Contract Checks
+    py_typed_path = target_dir / "maritime_risk" / "py.typed"
+    if not py_typed_path.exists():
+        return "FAIL", f"PEP 561 marker missing at {py_typed_path}"
+
+    try:
+        import maritime_risk as mtr
+    except ImportError as e:
+        return "FAIL", f"Failed to import canonical SDK facade 'maritime_risk': {e}"
+
+    # Verify __all__ export completeness
+    missing_exports = [name for name in mtr.__all__ if not hasattr(mtr, name)]
+    if missing_exports:
+        return "FAIL", f"maritime_risk.__all__ contains missing exports: {missing_exports}"
+
+    # Verify headless in-memory engine instantiation
+    try:
+        engine = mtr.MaritimeRiskEngine.from_specs()
+        if engine is None or not hasattr(engine, "evaluate"):
+            return "FAIL", "MaritimeRiskEngine.from_specs() did not return a valid engine instance"
+    except Exception as e:
+        return "FAIL", f"MaritimeRiskEngine.from_specs() failed with zero file I/O: {e}"
+
+    # 2. Numeric Calibration Falsifier
     try:
         import numpy as np
         from core.calibration import IsotonicCalibrator, PlattCalibrator, brier_score, log_loss
@@ -186,7 +290,7 @@ def check_numeric_calibration_falsifier() -> tuple[str, str]:
     except ImportError as e:
         return "FAIL", f"Failed to import numeric engines: {e}"
 
-    # 1. Test xi -> 0 analytical smooth limit
+    # Test xi -> 0 analytical smooth limit
     u, sigma, p_u = 4.0, 1.8, 0.08
     var_exact, cvar_exact = compute_gpd_var_cvar(u, xi=0.0, sigma=sigma, p_u=p_u, alpha=0.99)
     var_smooth, cvar_smooth = compute_gpd_var_cvar(u, xi=1e-8, sigma=sigma, p_u=p_u, alpha=0.99)
@@ -196,13 +300,13 @@ def check_numeric_calibration_falsifier() -> tuple[str, str]:
     if math.isnan(var_smooth) or math.isinf(var_smooth) or math.isnan(cvar_smooth) or math.isinf(cvar_smooth):
         return "FAIL", "GPD tail engine emitted NaN or Inf on xi -> 0 boundary"
 
-    # 2. Test zero-variance series
+    # Test zero-variance series
     constant_sample = [3.2, 3.2, 3.2, 3.2, 3.2]
     res_const = fit_pot_gpd(constant_sample, threshold_u=2.0)
     if any(math.isnan(v) or math.isinf(v) for v in [res_const.var_99, res_const.cvar_99, res_const.shape_xi]):
         return "FAIL", "GPD tail engine emitted NaN or Inf on zero-variance exceedance series"
 
-    # 3. Test extreme outlier severity (million-fold ratio explosion guard)
+    # Test extreme outlier severity (million-fold ratio explosion guard)
     extreme_sample = [0.1, 0.2, 1e7]
     res_ext = fit_pot_gpd(extreme_sample, threshold_u=0.05)
     if res_ext.shape_xi > 0.95:
@@ -210,7 +314,7 @@ def check_numeric_calibration_falsifier() -> tuple[str, str]:
     if math.isnan(res_ext.cvar_99) or math.isinf(res_ext.cvar_99):
         return "FAIL", "GPD tail engine emitted NaN or Inf on extreme outlier severity"
 
-    # 4. Test calibrators on pathological boundary inputs
+    # Test calibrators on pathological boundary inputs
     constant_scores = np.array([1.5, 1.5, 1.5])
     binary_labels = np.array([0, 1, 0])
 
@@ -229,32 +333,32 @@ def check_numeric_calibration_falsifier() -> tuple[str, str]:
     if np.any(np.isnan(preds_iso)) or np.any(np.isinf(preds_iso)):
         return "FAIL", "Isotonic calibrator produced NaN or Inf on zero-variance scores"
 
-    # 5. Test unweighted Brier invariance to financial loss scale
+    # Test unweighted Brier invariance to financial loss scale
     y_true = np.array([0, 1, 1, 0])
     y_prob = np.array([0.1, 0.85, 0.7, 0.15])
     brier1 = brier_score(y_true, y_prob)
 
-    # Verification: manual unweighted calculation
     brier_expected = float(np.mean((y_prob - y_true) ** 2))
     if not math.isclose(brier1, brier_expected, abs_tol=1e-12):
         return "FAIL", "Brier score departed from unweighted mathematical definition"
 
-    return "PASS", "Numerical stability guards, anti-1e-9 limits, and unweighted Brier invariance verified."
+    return "PASS", "PEP 561 py.typed, __all__ exports, in-memory SDK, and numeric falsifiers verified."
 
 
 def run_verification(target_dir: Path) -> int:
-    """Execute all three tri-state verification checks within 10 seconds SLA."""
+    """Execute all four verification gates within 10 seconds SLA."""
     start_time = time.perf_counter()
 
     print("=" * 80)
-    print("MARITIME TAIL RISK ENGINE: TRI-STATE REPOSITORY VERIFICATION")
+    print("MARITIME TAIL RISK ENGINE: QUAD-GATE REPOSITORY VERIFICATION")
     print(f"Target Directory: {target_dir}")
     print("=" * 80)
 
     checks = [
         ("AST Layer Reachability & Boundaries", lambda: check_ast_reachability_and_boundaries(target_dir)),
+        ("Anti-Hardcoding & Spec-Driven Purity Check", lambda: check_anti_hardcoding_purity(target_dir)),
         ("DB Isolation & Sandbox Guard", lambda: check_db_isolation_guard(target_dir)),
-        ("Numeric Calibration Falsifier (Anti-Blowup)", check_numeric_calibration_falsifier),
+        ("Numeric Calibration Falsifier & SDK Contract Check", lambda: check_numeric_calibration_and_sdk_contract(target_dir)),
     ]
 
     has_fail = False
@@ -279,7 +383,9 @@ def run_verification(target_dir: Path) -> int:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tri-State Self-Verification CLI")
     parser.add_argument(
+        "--target",
         "--target-dir",
+        dest="target_dir",
         type=Path,
         default=Path(__file__).resolve().parent,
         help="Target directory to verify",
