@@ -67,6 +67,11 @@ class CorridorAuditResult:
     dedup_incidents: Sequence[MaritimeIncident] = field(default_factory=list)
     registry: Optional[PluginRegistry] = None
 
+    @property
+    def jwc_pricing(self) -> JWCPricingResult:
+        """Alias for jwc_result."""
+        return self.jwc_result
+
     def to_dict(self) -> dict[str, Any]:
         """Convert entire audit result into a clean, JSON-serializable dictionary."""
         def _serialize(obj: Any) -> Any:

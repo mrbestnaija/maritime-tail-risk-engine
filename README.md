@@ -3,7 +3,7 @@
 **Point-in-Time MSSA, Empirical Bayes POT-GPD, and SPRT Maritime Corridor Tail-Risk & Underwriting Engine (100% Public Civilian OSINT)**
 
 [![Python 3.14](https://img.shields.io/badge/python-3.14.3-blue.svg)](https://www.python.org/)
-[![Tests: 56 Passed](https://img.shields.io/badge/tests-56%20passed%20(1.08s)-brightgreen.svg)](#verification--test-suite)
+[![Tests: 61 Passed](https://img.shields.io/badge/tests-61%20passed%20(1.09s)-brightgreen.svg)](#verification--test-suite)
 [![Verification: Quad--Gate PASS](https://img.shields.io/badge/verification-quad--gate%20PASS%20(0.37s)-brightgreen.svg)](#defense-in-depth-python-native-verification)
 [![OSINT: 100% Civilian](https://img.shields.io/badge/OSINT-100%25%20Civilian%20Only-success.svg)](#civilian-mda-hard-firewall)
 [![Fairway: GoG Bonny/Brass](https://img.shields.io/badge/fairway-GoG%20Bonny%2FBrass%20(4.0°N--4.5°N)-orange.svg)](#identity--fairway-parameters)
@@ -92,7 +92,7 @@ maritime-tail-risk-engine/
 │   └── gog_bonny_brass_civilian_telemetry.json  # 40-row multi-sensor civilian MDA telemetry
 ├── docs/                               # Commercialization & Academic Packs
 │   └── COMMERCIALIZATION_PACK.md       # LinkedIn Launch Post, B2B Outreach Email, Paper #1 Blueprint
-├── tests/                              # 100% Mock-Free Verification Suite (56 Tests)
+├── tests/                              # 100% Mock-Free Verification Suite (61 Tests)
 │   ├── core/                           # AST boundaries, hypothesis fuzzing, MSSA, GPD, hydro, JWC, SPRT
 │   ├── application/                    # Hygiene, telemetry, isolation, and tear sheet integrity
 │   └── infrastructure/                 # SQLite storage layer C-engine constraint enforcement
@@ -158,7 +158,7 @@ Generated deterministically from the Bonny & Brass Fairway vintage audit:
 git clone https://github.com/mrbestnaija/maritime-tail-risk-engine.git
 cd maritime-tail-risk-engine
 
-# 2. Run the mock-free pytest suite (56 tests in ~1.1s)
+# 2. Run the mock-free pytest suite (61 tests in ~1.1s)
 python -m pytest tests -v
 
 # 3. Run the Quad-Gate Self-Verification CLI (< 1.0s)

@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any, Optional, Sequence
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, root_validator
 
 DEFAULT_CORRIDOR_ID = "GOG_BONNY_BRASS_FAIRWAY"
 DEFAULT_VESSEL_PROFILE_ID = "STANDARD_SUEZMAX_85M"
@@ -18,18 +18,58 @@ DEFAULT_VESSEL_PROFILE_ID = "STANDARD_SUEZMAX_85M"
 class CorridorSpec(BaseModel):
     """Geographic corridor bounds and prior actuarial tail risk parameters."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
 
     corridor_id: str = DEFAULT_CORRIDOR_ID
     description: Optional[str] = "Gulf of Guinea (GoG) - Bonny / Brass Fairway"
+    name: Optional[str] = None
     latitude_min: float = 4.0
     latitude_max: float = 4.5
     longitude_min: float = 6.5
     longitude_max: float = 7.5
+    min_latitude: Optional[float] = None
+    max_latitude: Optional[float] = None
+    min_longitude: Optional[float] = None
+    max_longitude: Optional[float] = None
     prior_xi: float = 0.18
     prior_sigma: float = 1.50
     prior_kappa: float = 12.0
     jwc_market_benchmark_bps: float = 15.0
+    incident_dataset_path: Optional[str] = None
+    telemetry_dataset_path: Optional[str] = None
+
+    @root_validator(pre=True)
+    def _normalize_fields(cls, values: Any) -> Any:
+        if isinstance(values, dict):
+            data = dict(values)
+            # lat/lon mappings
+            if "min_latitude" in data and "latitude_min" not in data:
+                data["latitude_min"] = data["min_latitude"]
+            elif "latitude_min" in data and "min_latitude" not in data:
+                data["min_latitude"] = data["latitude_min"]
+
+            if "max_latitude" in data and "latitude_max" not in data:
+                data["latitude_max"] = data["max_latitude"]
+            elif "latitude_max" in data and "max_latitude" not in data:
+                data["max_latitude"] = data["latitude_max"]
+
+            if "min_longitude" in data and "longitude_min" not in data:
+                data["longitude_min"] = data["min_longitude"]
+            elif "longitude_min" in data and "min_longitude" not in data:
+                data["min_longitude"] = data["longitude_min"]
+
+            if "max_longitude" in data and "longitude_max" not in data:
+                data["longitude_max"] = data["max_longitude"]
+            elif "longitude_max" in data and "max_longitude" not in data:
+                data["max_longitude"] = data["longitude_max"]
+
+            # name / description mappings
+            if "name" in data and ("description" not in data or not data.get("description")):
+                data["description"] = data["name"]
+            elif "description" in data and ("name" not in data or not data.get("name")):
+                data["name"] = data["description"]
+            return data
+        return values
 
 
 class VesselProfileSpec(BaseModel):
@@ -189,9 +229,10 @@ def load_corridor_spec(corridor_id: str, config_dir: str | Path = "configs") -> 
         raise FileNotFoundError(f"Corridors config file not found: {path}")
 
     data = json.loads(path.read_text(encoding="utf-8"))
-    if corridor_id not in data:
-        raise KeyError(f"Corridor '{corridor_id}' not found in {path}. Available: {list(data.keys())}")
-    return CorridorSpec(**data[corridor_id])
+    corridors_map = data.get("corridors", data)
+    if corridor_id not in corridors_map:
+        raise KeyError(f"Corridor '{corridor_id}' not found in {path}. Available: {list(corridors_map.keys())}")
+    return CorridorSpec(**corridors_map[corridor_id])
 
 
 def load_vessel_spec(vessel_profile_id: str, config_dir: str | Path = "configs") -> VesselProfileSpec:

@@ -47,6 +47,11 @@ class JWCPricingResult:
     operational_hardening_index: float = 0.0
     pricing_model: str = "lloyds_first_principles"
 
+    @property
+    def market_benchmark_bps(self) -> float:
+        """Alias for jwc_market_benchmark_bps."""
+        return self.jwc_market_benchmark_bps
+
 
 # Alias for spec naming compatibility
 JWCPriceResult = JWCPricingResult
