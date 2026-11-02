@@ -175,6 +175,7 @@ class CoxHazardSpec(BaseModel):
     ohi_speed_weight: float = 0.40
     ohi_armed_guard_weight: float = 2.00
     voyage_window_days: float = 7.0
+    commercial_baseline_bps: float = 1.0
 
 
 class MacroGPDScaleSpec(BaseModel):

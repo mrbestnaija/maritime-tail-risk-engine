@@ -93,6 +93,8 @@ class DefaultLloydsJWCPricer:
         **kwargs: Any,
     ) -> JWCPricingResult:
         reg_mult = kwargs.get("regime_multiplier", regime_multiplier)
+        cox_spec = kwargs.get("cox_spec")
+        comm_floor = kwargs.get("commercial_baseline_bps")
         return compute_jwc_7day_war_risk_ap(
             calibrated_7d_breach_prob=breach_prob_7d,
             composite_cvar_99=composite_cvar_99,
@@ -100,6 +102,8 @@ class DefaultLloydsJWCPricer:
             vessel_spec=vessel_spec,
             corridor_spec=corridor_spec,
             regime_multiplier=reg_mult,
+            cox_spec=cox_spec,
+            commercial_baseline_bps=comm_floor,
         )
 
 

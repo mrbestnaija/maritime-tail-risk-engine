@@ -21,6 +21,12 @@ class TemporalParadoxError(ValueError):
     pass
 
 
+class UninsurableRiskException(ValueError, ArithmeticError):
+    """Raised when extreme value shape parameter xi >= 1.0, indicating infinite-mean tail risk."""
+
+    pass
+
+
 class GeoCoordinates(BaseModel):
     """Geographic coordinates in WGS-84 decimal degrees."""
 

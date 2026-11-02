@@ -25,7 +25,7 @@ import numpy as np
 from .ingestion_hygiene import IngestionHygieneService
 from .registry import PluginRegistry, default_registry
 from ..core.calibration import brier_score, log_loss
-from ..core.gpd_tail_fitter import GPDTailRiskEstimate
+from ..core.gpd_tail_fitter import GPDTailRiskEstimate, compute_tail_risk
 from ..core.hydro_envelope import HydrodynamicEnvelopeResult, evaluate_hydrodynamic_envelope
 from ..core.jwc_pricer import JWCPricingResult
 from ..core.metrics import compute_tail_risk_profile
@@ -662,15 +662,19 @@ class MaritimeRiskEngine:
             "hydro_feasibility": hydro_res.boarding_feasibility,
             "vessel_spec": self.vessel_spec,
             "corridor_spec": self.corridor_spec,
+            "cox_spec": self.hyperparams.cox,
+            "commercial_baseline_bps": getattr(self.hyperparams.cox, "commercial_baseline_bps", 0.0),
+            "regime_multiplier": regime_multiplier,
         }
         try:
             sig = inspect.signature(pricer.price_transit)
-            if "regime_multiplier" in sig.parameters or any(
+            has_varkw = any(
                 p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
-            ):
-                call_kwargs["regime_multiplier"] = regime_multiplier
+            )
+            if not has_varkw:
+                call_kwargs = {k: v for k, v in call_kwargs.items() if k in sig.parameters}
         except Exception:
-            call_kwargs["regime_multiplier"] = regime_multiplier
+            pass
         jwc_res = pricer.price_transit(**call_kwargs)
 
         return CorridorAuditResult(
@@ -705,6 +709,10 @@ class MaritimeRiskEngine:
         incidents = incident_source.fetch_incidents(self.corridor_spec.corridor_id, as_of=as_of)
         telemetry = telemetry_source.fetch_telemetry(self.corridor_spec.corridor_id, as_of=as_of)
         return self.evaluate(incidents=incidents, telemetry=telemetry, as_of=as_of)
+
+    def compute_tail_risk(self, *args: Any, **kwargs: Any) -> GPDTailRiskEstimate:
+        """Compute tail risk with uninsurable infinite-mean refusal guardrail."""
+        return compute_tail_risk(*args, spec=self.hyperparams.gpd, vessel_spec=self.vessel_spec, **kwargs)
 
 
 MaritimeTailRiskEngine = MaritimeRiskEngine

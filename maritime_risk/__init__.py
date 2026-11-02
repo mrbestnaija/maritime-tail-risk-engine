@@ -62,9 +62,11 @@ from .core.empirical_bayes import shrink_gpd_parameters
 from .core.regime_switch import compute_regime_multiplier
 from .core.gpd_tail_fitter import (
     GPDTailRiskEstimate,
+    UninsurableRiskException,
     compute_actuarial_war_risk_loading_bps,
     compute_gpd_var_cvar,
     compute_macro_modulated_gpd_tail,
+    compute_tail_risk,
     fit_pot_gpd,
     gpd_cdf,
 )
@@ -140,6 +142,7 @@ __all__ = [
     "GeoCoordinates",
     "SeverityInterval",
     "TemporalParadoxError",
+    "UninsurableRiskException",
     # Specifications
     "DEFAULT_CORRIDOR_ID",
     "DEFAULT_VESSEL_PROFILE_ID",
@@ -175,6 +178,7 @@ __all__ = [
     "hankel_diagonal_averaging",
     "fit_pot_gpd",
     "compute_macro_modulated_gpd_tail",
+    "compute_tail_risk",
     "GPDTailRiskEstimate",
     "compute_gpd_var_cvar",
     "gpd_cdf",

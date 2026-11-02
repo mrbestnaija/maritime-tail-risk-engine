@@ -72,6 +72,8 @@ def compute_jwc_7day_war_risk_ap(
     corridor_spec: Optional[CorridorSpec] = None,
     regime_multiplier: float = 1.0,
     operational_state: Optional[str] = None,
+    cox_spec: Optional[CoxHazardSpec] = None,
+    commercial_baseline_bps: Optional[float] = None,
 ) -> JWCPricingResult:
     """Calculate first-principles Lloyd's JWC 7-Day Additional Premium and demurrage exposure.
 
@@ -149,9 +151,18 @@ def compute_jwc_7day_war_risk_ap(
 
     # 4. First-principles expected 7-day tail exposure for the transiting vessel (scaled by regime multiplier)
     expected_7d_tail_loss_usd = effective_vessel_prob * (cvar_99_demurrage_usd + catastrophic_loss_usd) * reg_mult
+    # Capital Solvency Guard: expected tail loss cannot exceed insured vessel hull value
+    expected_7d_tail_loss_usd = min(expected_7d_tail_loss_usd, vessel_usd)
 
     # 5. Fair actuarial war-risk AP in basis points (1 bps = 0.0001 of insured hull value)
     actuarial_ap_bps = (expected_7d_tail_loss_usd / vessel_usd) * 10_000.0
+    floor_bps = (
+        commercial_baseline_bps
+        if commercial_baseline_bps is not None
+        else (getattr(cox_spec, "commercial_baseline_bps", 0.0) if cox_spec is not None else 0.0)
+    )
+    if floor_bps > 0.0:
+        actuarial_ap_bps = max(actuarial_ap_bps, floor_bps)
 
     # 6. Commercial spread and per-transit mispricing USD
     mispricing_spread_bps = actuarial_ap_bps - benchmark_bps
@@ -316,9 +327,14 @@ def price_cox_7day_war_risk_ap(
 
     # First-principles expected loss: p_breach_7d directly models vessel voyage breach (scaled by regime multiplier)
     expected_7d_tail_loss_usd = p_breach_7d * (cvar_99_demurrage_usd + catastrophic_loss_usd) * reg_mult
+    # Capital Solvency Guard: expected tail loss cannot exceed insured vessel hull value
+    expected_7d_tail_loss_usd = min(expected_7d_tail_loss_usd, vessel_usd)
 
     # Fair actuarial AP in basis points (1 bps = 0.0001 of hull)
     actuarial_ap_bps = (expected_7d_tail_loss_usd / vessel_usd) * 10_000.0
+    commercial_floor = getattr(cx_spec, "commercial_baseline_bps", 0.0)
+    if commercial_floor > 0.0:
+        actuarial_ap_bps = max(actuarial_ap_bps, commercial_floor)
     mispricing_spread_bps = actuarial_ap_bps - benchmark_bps
     per_transit_mispricing_usd = (mispricing_spread_bps / 10_000.0) * vessel_usd
 

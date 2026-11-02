@@ -10,8 +10,10 @@ from .calibration import (
 from .empirical_bayes import shrink_gpd_parameters
 from .gpd_tail_fitter import (
     GPDTailRiskEstimate,
+    UninsurableRiskException,
     compute_actuarial_war_risk_loading_bps,
     compute_gpd_var_cvar,
+    compute_tail_risk,
     fit_pot_gpd,
     gpd_cdf,
 )
@@ -76,6 +78,8 @@ __author__ = "Bestman Ezekwu Enock (@mrbestnaija)"
 __all__ = [
     "CivilianSensorTelemetry",
     "GPDTailRiskEstimate",
+    "UninsurableRiskException",
+    "compute_tail_risk",
     "GeoCoordinates",
     "HydrodynamicEnvelopeResult",
     "IsotonicCalibrator",

@@ -267,9 +267,12 @@ def test_anchored_vessel_prices_lower_all_else_equal():
         assert res_anchor.expected_7d_tail_loss_usd < res_underway.expected_7d_tail_loss_usd, (
             f"Anchor expected loss ({res_anchor.expected_7d_tail_loss_usd}) not lower than underway"
         )
-        assert res_anchor.actuarial_7d_war_risk_ap_bps < res_underway.actuarial_7d_war_risk_ap_bps, (
-            f"Anchor AP ({res_anchor.actuarial_7d_war_risk_ap_bps} bps) not lower than underway ({res_underway.actuarial_7d_war_risk_ap_bps} bps)"
-        )
+        if res_underway.actuarial_7d_war_risk_ap_bps > cox.commercial_baseline_bps:
+            assert res_anchor.actuarial_7d_war_risk_ap_bps < res_underway.actuarial_7d_war_risk_ap_bps, (
+                f"Anchor AP ({res_anchor.actuarial_7d_war_risk_ap_bps} bps) not lower than underway ({res_underway.actuarial_7d_war_risk_ap_bps} bps)"
+            )
+        else:
+            assert res_anchor.actuarial_7d_war_risk_ap_bps <= res_underway.actuarial_7d_war_risk_ap_bps
 
         # Expected ratio check on daily hazard
         hazard_ratio = res_anchor.daily_hazard_rate / res_underway.daily_hazard_rate

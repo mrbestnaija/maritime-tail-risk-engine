@@ -18,11 +18,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 import numpy as np
 from scipy.optimize import minimize
 
 from .empirical_bayes import shrink_gpd_parameters
+from .models import UninsurableRiskException
 from .specs import EmpiricalBayesSpec, GPDFitterSpec, MacroGPDScaleSpec, VesselProfileSpec
 
 
@@ -470,11 +471,164 @@ def compute_macro_modulated_gpd_tail(
     )
 
 
+def compute_tail_risk(
+    *args: Any,
+    u: Optional[float] = None,
+    xi: Optional[float] = None,
+    sigma: Optional[float] = None,
+    p_u: Optional[float] = None,
+    alpha: float = 0.99,
+    shape_cap: float = 0.95,
+    insured_vessel_usd: Optional[float] = None,
+    baseline_anchor: float = 0.0,
+    spec: Optional[GPDFitterSpec] = None,
+    vessel_spec: Optional[VesselProfileSpec] = None,
+    **kwargs: Any,
+) -> GPDTailRiskEstimate:
+    """Compute POT-GPD tail risk with uninsurable infinite-mean refusal guardrail.
+
+    Mathematical Invariant:
+    When xi >= 1.0 (raw MLE spike), the mean of the Generalized Pareto Distribution
+    diverges to infinity (E[X] = infinity). The engine must NOT clamp xi to 0.95 to force
+    a finite price. Instead, it must explicitly REFUSE to price by raising UninsurableRiskException,
+    protecting the capital pool from catastrophic insolvency.
+
+    Parameters
+    ----------
+    u : Optional[float]
+        Threshold u.
+    xi : Optional[float]
+        GPD shape parameter (tail index).
+    sigma : Optional[float]
+        GPD scale parameter.
+    p_u : Optional[float]
+        Exceedance probability P(X > u).
+    alpha : float
+        Confidence level for VaR/CVaR (default: 0.99).
+    shape_cap : float
+        Upper shape cap for finite-mean regime (default: 0.95).
+    insured_vessel_usd : Optional[float]
+        Insured hull valuation in USD.
+    baseline_anchor : float
+        Secular + seasonal baseline anchor.
+    spec : Optional[GPDFitterSpec]
+        GPD hyperparameter specification.
+    vessel_spec : Optional[VesselProfileSpec]
+        Vessel profile specification.
+
+    Raises
+    ------
+    UninsurableRiskException
+        If xi >= 1.0, explicitly refusing to price uninsurable infinite-mean risk.
+    """
+    # Resolve positional arguments
+    if len(args) == 1:
+        if xi is None and isinstance(args[0], (int, float)):
+            xi = float(args[0])
+    elif len(args) == 2:
+        if u is None and isinstance(args[0], (int, float)):
+            u = float(args[0])
+        if xi is None and isinstance(args[1], (int, float)):
+            xi = float(args[1])
+    elif len(args) >= 3:
+        if u is None and isinstance(args[0], (int, float)):
+            u = float(args[0])
+        if xi is None and isinstance(args[1], (int, float)):
+            xi = float(args[1])
+        if sigma is None and isinstance(args[2], (int, float)):
+            sigma = float(args[2])
+        if len(args) >= 4 and p_u is None and isinstance(args[3], (int, float)):
+            p_u = float(args[3])
+
+    if "raw_xi" in kwargs and xi is None:
+        xi = kwargs["raw_xi"]
+    if "xi_mle" in kwargs and xi is None:
+        xi = kwargs["xi_mle"]
+
+    u_val = float(0.0 if u is None else u)
+    xi_val = float(0.0 if xi is None else xi)
+    sigma_val = float(1.0 if sigma is None else sigma)
+    p_u_val = float(0.01 if p_u is None else p_u)
+
+    # UNINSURABLE TAIL REFUSAL GUARDRAIL:
+    # When xi >= 1.0, mean risk is mathematically infinite.
+    # The engine must NOT clamp xi to force a finite price.
+    if xi_val >= 1.0:
+        raise UninsurableRiskException(
+            f"Uninsurable tail risk: GPD shape xi={xi_val:.4f} >= 1.0 implies infinite-mean exposure (E[X] = infinity). "
+            "Engine explicitly refuses to price uninsurable risk to protect underwriter solvency."
+        )
+
+    g_spec = spec or GPDFitterSpec()
+    v_spec = vessel_spec or VesselProfileSpec()
+    vessel_usd = v_spec.insured_vessel_usd if insured_vessel_usd is None else float(insured_vessel_usd)
+    eff_cap = min(float(shape_cap), float(getattr(g_spec, "xi_max", 0.95)))
+
+    # Compute VaR and CVaR for insurable finite-mean regime
+    var_95, _ = compute_gpd_var_cvar(
+        u=u_val,
+        xi=xi_val,
+        sigma=sigma_val,
+        p_u=p_u_val,
+        alpha=g_spec.secondary_tail_alpha,
+        shape_cap=eff_cap,
+    )
+    var_99, cvar_99 = compute_gpd_var_cvar(
+        u=u_val,
+        xi=xi_val,
+        sigma=sigma_val,
+        p_u=p_u_val,
+        alpha=alpha,
+        shape_cap=eff_cap,
+    )
+
+    base = float(baseline_anchor)
+    comp_var_95 = base + var_95
+    comp_var_99 = base + var_99
+    comp_cvar_99 = base + cvar_99
+
+    if comp_var_99 < comp_var_95:
+        comp_var_99 = comp_var_95
+    if comp_cvar_99 < comp_var_99:
+        comp_cvar_99 = comp_var_99
+
+    loading_bps = compute_actuarial_war_risk_loading_bps(
+        cvar_99=cvar_99,
+        insured_vessel_usd=vessel_usd,
+        vessel_spec=v_spec,
+        gpd_spec=g_spec,
+    )
+
+    return GPDTailRiskEstimate(
+        shape_xi=xi_val,
+        scale_sigma=sigma_val,
+        threshold_u=u_val,
+        exceedance_count=1,
+        var_95=var_95,
+        var_99=var_99,
+        cvar_99=cvar_99,
+        actuarial_war_risk_loading_bps=loading_bps,
+        insured_vessel_usd=vessel_usd,
+        residual_var_95=var_95,
+        residual_var_99=var_99,
+        residual_cvar_99=cvar_99,
+        baseline_anchor=base,
+        composite_corridor_var_95=comp_var_95,
+        composite_corridor_var_99=comp_var_99,
+        composite_corridor_cvar_99=comp_cvar_99,
+        shrinkage_weight_w=1.0,
+        raw_xi=xi_val,
+    )
+
+
 __all__ = [
     "GPDTailRiskEstimate",
+    "UninsurableRiskException",
+    "compute_tail_risk",
     "gpd_cdf",
     "compute_gpd_var_cvar",
     "compute_actuarial_war_risk_loading_bps",
     "fit_pot_gpd",
     "compute_macro_modulated_gpd_tail",
 ]
+
