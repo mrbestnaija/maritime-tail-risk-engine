@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "maritime-tail-risk-engine"
 version = "0.3.1"
-description = "Institutional Pluggable Tail Risk Underwriting SDK for Maritime Security OSINT & Civilian Satellite Feeds"
+description = "Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "Bestman Ezekwu Enock", email = "ezekwu77@gmail.com" }
+    { name = "Nigerian Navy officer with 20+ years of operational experience" }
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -22,11 +22,11 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "pydantic>=2.0.0",
-    "numpy>=1.22.0",
-    "scipy>=1.8.0",
-    "hypothesis>=6.0.0",
-    "pytest>=7.0.0",
+    "pydantic==1.10.26",
+    "numpy==2.4.2",
+    "scipy==1.17.0",
+    "hypothesis==6.151.9",
+    "pytest==9.0.2",
 ]
 
 [project.scripts]
@@ -35,8 +35,6 @@ maritime-risk = "maritime_risk.cli:main"
 [project.urls]
 Homepage = "https://github.com/mrbestnaija/maritime-tail-risk-engine"
 ORCID = "https://orcid.org/0009-0008-0112-9273"
-LinkedIn = "https://www.linkedin.com/in/bestman-ezekwu/"
-Funding = "https://github.com/sponsors/mrbestnaija"
 
 [project.entry-points."maritime_risk.plugins"]
 

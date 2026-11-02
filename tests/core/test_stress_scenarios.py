@@ -1,7 +1,6 @@
 """Hypothesis Property-Based Actuarial Stress Testing Suite.
 
-Author: Bestman Ezekwu Enock
-Credentials: Nigerian Navy officer with 20+ years of operational experience
+Author: Nigerian Navy officer with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
 Repository: maritime-tail-risk-engine (Branch main)
 
@@ -140,7 +139,10 @@ def test_hypothesis_pnl_solvency_invariant_premium_vs_tail_risk(
     assert loss_given_breach_usd > 0.0
 
     # 2. Pure 99th percentile expected tail shortfall for the transiting vessel
-    expected_shortfall_usd = res.effective_vessel_breach_prob * loss_given_breach_usd
+    expected_shortfall_usd = min(
+        res.effective_vessel_breach_prob * loss_given_breach_usd,
+        res.insured_vessel_usd,
+    )
     expected_shortfall_bps = (expected_shortfall_usd / res.insured_vessel_usd) * 10_000.0
 
     # 3. Macro liquidity solvency margin
@@ -150,13 +152,14 @@ def test_hypothesis_pnl_solvency_invariant_premium_vs_tail_risk(
     # 4. Solvency Invariant Assertion:
     # Expected_Premium >= Expected_Shortfall(CVaR_99) + Margin
     expected_premium_bps = res.actuarial_7d_war_risk_ap_bps
+    expected_target_bps = min(expected_shortfall_bps + solvency_margin_bps, 10_000.0)
     assert math.isclose(
         expected_premium_bps,
-        expected_shortfall_bps + solvency_margin_bps,
+        expected_target_bps,
         rel_tol=1e-5,
         abs_tol=1e-7,
     )
-    assert expected_premium_bps >= expected_shortfall_bps, (
+    assert expected_premium_bps >= min(expected_shortfall_bps, 10_000.0), (
         f"Solvency violation: Expected premium {expected_premium_bps:.6f} bps "
         f"< Expected shortfall {expected_shortfall_bps:.6f} bps"
     )

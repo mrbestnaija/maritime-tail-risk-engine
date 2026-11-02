@@ -1,9 +1,9 @@
 # maritime-tail-risk-engine
 
-**Point-in-Time MSSA, Empirical Bayes POT-GPD, and SPRT Maritime Corridor Tail-Risk & Underwriting Engine (100% Public Civilian OSINT)**
+**Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways.**
 
 [![Python 3.14](https://img.shields.io/badge/python-3.14.3-blue.svg)](https://www.python.org/)
-[![Tests: 61 Passed](https://img.shields.io/badge/tests-61%20passed%20(1.09s)-brightgreen.svg)](#verification--test-suite)
+[![Tests: Phase 1 Deterministic](https://img.shields.io/badge/tests-Phase%201%20passing-brightgreen.svg)](#verification--test-suite)
 [![Verification: Quad--Gate PASS](https://img.shields.io/badge/verification-quad--gate%20PASS%20(0.37s)-brightgreen.svg)](#defense-in-depth-python-native-verification)
 [![OSINT: 100% Civilian](https://img.shields.io/badge/OSINT-100%25%20Civilian%20Only-success.svg)](#civilian-mda-hard-firewall)
 [![Fairway: GoG Bonny/Brass](https://img.shields.io/badge/fairway-GoG%20Bonny%2FBrass%20(4.0°N--4.5°N)-orange.svg)](#identity--fairway-parameters)
@@ -14,13 +14,17 @@
 
 ## Executive Summary
 
-`maritime-tail-risk-engine` is an institutional-grade quantitative risk modeling and actuarial underwriting platform designed for Lloyd's war-risk syndicates, P&I clubs, offshore energy logistics charterers, and maritime security risk committees.
+`maritime-tail-risk-engine` provides **rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways**.
 
-Operating canonically over the **Gulf of Guinea (GoG) - Bonny & Brass Fairway (`4.0°N–4.5°N, 6.5°E–7.5°E`)**, the engine models maritime conflict and piracy tail risk by fusing **100% verified civilian open-source intelligence (OSINT)** and **satellite/metocean telemetry** across three breakthrough quantitative innovations:
+Operating canonically over the **Gulf of Guinea (GoG) - Bonny & Brass Fairway (`4.0°N–4.5°N, 6.5°E–7.5°E`)**, the engine quantifies maritime security tail-risk distortions caused by publication delays and cross-agency reporting divergence using 100% verified civilian open-source intelligence (OSINT):
 
-1. **Bi-Temporal Reporting-Lag Audit**: Quantifies a **3.40-day mean reporting lag (max 8.00 days)** across public feeds (IMB PRC, MDAT-GoG, Dryad Global, UKMTO), proving that static publication-date models underestimate active 14-day surge $\text{VaR}$ by up to **34.8%**. Cross-feed deduplication via **Union Envelopes** ($\min(\text{min}), \max(\text{max})$) eliminates duplicate report distortion by **22.5%** without clipping extreme tail severity.
-2. **MSSA Environmental Seasonal Decomposition**: Multivariate Singular Spectrum Analysis ($M = 4$ channels, window $L = 10$) separates secular fairway threat drift from monsoon sea-state wave harmonics with **$1.77 \times 10^{-13}$ Frobenius reconstruction precision**. Isolating seasonal wave dynamics prevents **4 false-alarm private security escort (PMSC) mobilizations**, delivering **$74,000 USD in direct OPEX savings** ($18,500/day rate).
-3. **Empirical Bayes POT-GPD & First-Principles JWC Pricing**: Regularizes small-sample Peaks-Over-Threshold Generalized Pareto tail parameters via Hosking–Wallis Probability-Weighted Moments shrunk toward the historical fairway prior ($\xi_0 = 0.18$), eliminating negative-boundary optimizer railing ($\xi_{\text{shrunk}} = +0.2500$, composite $\text{CVaR}_{0.99} = 26.06$). Modulating 7-day single-vessel transit exposure with small-skiff hydrodynamic boarding feasibility yields a fair Additional Premium of **24.16 bps** on an $85M hull—uncovering a defensible **+9.16 bps ($77,897.36 / transit) underpricing spread** against static 15.00 bps Lloyd's Joint War Committee benchmarks during `RED_ESCALATION_BREACH` surveillance regimes ($S_t = +8.71$).
+1. **Bi-Temporal Reporting-Lag Audit**: Quantifies a **3.40-day mean reporting lag (max 8.00 days)** across public feeds (IMB PRC, MDAT-GoG, Dryad Global, UKMTO), proving that models relying on static publication timestamps underestimate active 14-day surge $\text{VaR}_{0.99}$ by up to **34.8%**.
+2. **Union Envelope Invariant**: Cross-feed reconciliation via **Union Envelopes** ($\min(\text{min}), \max(\text{max})$) eliminates duplicate report inflation by **22.5%** ($40 \to 31$ unique events) while mathematically preserving upper-tail severity bounds.
+3. **Physical Storage Invariants**: Programmatically guarantees causality ($t_{\text{pub}} \ge t_{\text{event}}$) via SQLite C-engine `CHECK` constraints, preventing temporal lookahead leakage during backtesting.
+
+> [!NOTE]
+> **Phase 1 Verified Scope**: This release represents the frozen Phase 1 baseline. All unverified Phase 2+ aspirational features—including live dynamic oracles, Solvency II capital relief claims, and regime-switching multipliers—are halted and excluded from this release.
+
 
 ---
 
@@ -154,17 +158,14 @@ Generated deterministically from the Bonny & Brass Fairway vintage audit:
 ## Quickstart & Verification
 
 ```bash
-# 1. Clone repository
+# 1. Clone repository & enter workspace
 git clone https://github.com/mrbestnaija/maritime-tail-risk-engine.git
 cd maritime-tail-risk-engine
 
-# 2. Run the mock-free pytest suite (61 tests in ~1.1s)
-python -m pytest tests -v
-
-# 3. Run the Quad-Gate Self-Verification CLI (< 1.0s)
+# 2. Run Quad-Gate self-verification (< 1.0s)
 python verify_repo.py --target .
 
-# 4. Generate the Underwriting Tear Sheet and Audit Manifest
+# 3. Generate cryptographic Phase 1 audit manifest & tear sheet
 python generate_tear_sheet.py
 ```
 
@@ -184,27 +185,10 @@ For immediate commercial deployment and academic publication:
 
 ---
 
-## Author & Academic Credentials
+## Author Attribution
 
-- **Lead Quantitative Risk Architect**: **Bestman Ezekwu Enock**
-- **Designation / Background**: Nigerian Navy officer with 20+ years of operational experience
-- **Qualifications**: M.Sc. Maritime Security & Warfare | M.A. Peace & Conflict Studies | MITx Statistics & Data Science
-- **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)
+- **Author**: Nigerian Navy officer with 20+ years of operational experience
 - **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273)
-- **LinkedIn**: [Bestman Ezekwu Enock](https://www.linkedin.com/in/bestman-ezekwu/)
-
----
-
-## Research Sustainability & Calibrated Sponsorship
-
-Independent open-source maritime research and reproducible empirical verification are supported through conservative, calibrated community sponsorship tiers:
-
-- **$15 / month (Compute & Data Feed Archival Support)**: Offsets continuous CI/CD compute, automated unit-test verification, and public civilian satellite telemetry storage.
-- **$50 / month (Independent Academic Research Sustainability)**: Directly supports open-access paper publication, reproducible vintage audit tear sheets, and independent empirical methodology.
-
-Higher-tier institutional retainers are deliberately shelved until multiple public vintage audit tear sheets earn peer review.
-
-Sponsor the project directly via [GitHub Sponsors](https://github.com/sponsors/mrbestnaija) or verify researcher credentials on [ORCID](https://orcid.org/0009-0008-0112-9273) and [LinkedIn](https://www.linkedin.com/in/bestman-ezekwu/). See [`.github/SPONSORS_PROFILE.md`](.github/SPONSORS_PROFILE.md) for full details.
 
 ---
 

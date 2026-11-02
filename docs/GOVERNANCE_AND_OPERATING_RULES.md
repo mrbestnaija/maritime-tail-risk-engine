@@ -17,10 +17,9 @@ These rules codify verified professional, legal, and mathematical constraints de
 ### Rule 1.2 — Single Immutable Source of Truth for Identity
 - **Problem**: Discrepant author names, ORCIDs, or URLs across files undermine academic credibility, peer review, and bibliographic indexing.
 - **Enforcement**: Every document, schema, and manifest must bind to the following verified credentials:
-  - **Author Name**: Bestman Ezekwu
+  - **Author Identity**: Nigerian Navy officer with 20+ years of operational experience
   - **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273)
-  - **LinkedIn**: [`https://www.linkedin.com/in/bestman-ezekwu/`](https://www.linkedin.com/in/bestman-ezekwu/)
-  - **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)
+  - **Legacy Terminology Ban**: All personal names, personal email addresses, personal URLs, commercial titles (e.g., "Lead Quantitative Risk Architect"), academic degree strings, and prohibited service terms ("veteran") are strictly banned.
 
 ---
 
@@ -37,6 +36,13 @@ These rules codify verified professional, legal, and mathematical constraints de
   - IMF PortWatch maritime corridor trade chokepoints
   - NOAA VIIRS Nightfire offshore flaring / optical observations
 - **Zero Military C2 Coupling**: Under zero circumstances may this codebase ingest, interface with, simulate, or reference restricted military or naval Command & Control (C2) systems (e.g., Falcon Eye, RMAC).
+
+### Rule 2.3 — Stated Value Proposition Binding
+- The repository's authoritative value proposition is strictly codified as:
+  $$\text{"Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways."}$$
+
+### Rule 2.4 — Prohibition of Unverified Aspirational Claims
+- Unverified Phase 2+ aspirational features—including claims regarding "Solvency II capital relief", "live dynamic oracles", "regime-switching multipliers", or speculative commercial underwriting spreads—are strictly prohibited from all public documentation and audit outputs until independently audited in future project phases.
 
 ---
 

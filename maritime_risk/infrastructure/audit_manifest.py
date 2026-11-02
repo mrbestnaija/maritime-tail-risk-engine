@@ -135,12 +135,8 @@ class AuditManifestBuilder:
                 "per_transit_mispricing_usd": getattr(jwc_result, "per_transit_mispricing_usd", None),
             },
             "author_block": {
-                "author": "Bestman Ezekwu Enock",
-                "role": "Quantitative Risk Architect & Maritime Tail Risk Lead",
-                "designation": "Nigerian Navy officer with 20+ years of operational experience",
-                "github": "https://github.com/mrbestnaija",
+                "author": "Nigerian Navy officer with 20+ years of operational experience",
                 "orcid": "0009-0008-0112-9273",
-                "linkedin": "https://www.linkedin.com/in/bestman-ezekwu/",
             },
         }
         return manifest

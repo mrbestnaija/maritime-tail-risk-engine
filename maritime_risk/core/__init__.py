@@ -73,7 +73,7 @@ from .sprt_gates import (
 compute_skiff_boarding_feasibility = skiff_boarding_feasibility
 
 __version__ = "0.3.0"
-__author__ = "Bestman Ezekwu Enock (@mrbestnaija)"
+__author__ = "Nigerian Navy officer with 20+ years of operational experience"
 
 __all__ = [
     "CivilianSensorTelemetry",

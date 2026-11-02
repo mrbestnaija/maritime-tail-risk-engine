@@ -1,16 +1,12 @@
 cff-version: 1.2.0
 message: "If you use this software in academic or underwriting risk research, please cite it as below."
-title: "maritime-tail-risk-engine: Python-Native Clean Architecture Tail Risk Underwriting Engine"
+title: "maritime-tail-risk-engine: Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways"
 version: 0.3.1
 date-released: 2026-11-01
 url: "https://github.com/mrbestnaija/maritime-tail-risk-engine"
 authors:
-  - family-names: "Enock"
-    given-names: "Bestman Ezekwu"
-    email: "ezekwu77@gmail.com"
+  - name: "Nigerian Navy officer with 20+ years of operational experience"
     orcid: "https://orcid.org/0009-0008-0112-9273"
-    website: "https://www.linkedin.com/in/bestman-ezekwu/"
-    affiliation: "Nigerian Navy / Quantitative Risk Researcher"
 keywords:
   - "maritime tail risk"
   - "extreme value theory"

@@ -121,8 +121,8 @@ During `{anomaly_data['sprt_watch_state']}` regimes, static Joint War Committee 
 
 ---
 
-**Researcher**: Bestman Ezekwu (Nigerian Navy officer with 20+ years of operational experience)  
-**ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273) | **LinkedIn**: [https://www.linkedin.com/in/bestman-ezekwu/](https://www.linkedin.com/in/bestman-ezekwu/)
+**Author**: Nigerian Navy officer with 20+ years of operational experience  
+**ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273)
 """
 
     teaser_file = out_dir / f"ANOMALY_TEASER_{corridor_id}.md"
