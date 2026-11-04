@@ -14,6 +14,15 @@ from pydantic import BaseModel, ConfigDict, Field, root_validator
 DEFAULT_CORRIDOR_ID = "GOG_BONNY_BRASS_FAIRWAY"
 DEFAULT_VESSEL_PROFILE_ID = "STANDARD_SUEZMAX_85M"
 
+VALID_OPERATIONAL_STATES: tuple[str, ...] = (
+    "UNDERWAY",
+    "UNDERWAY_LONE",
+    "UNDERWAY_ESCORTED",
+    "AT_ANCHOR",
+    "AT_ANCHOR_SECURED",
+    "AT_ANCHOR_UNPROTECTED",
+)
+
 
 class CorridorSpec(BaseModel):
     """Geographic corridor bounds and prior actuarial tail risk parameters."""
@@ -165,8 +174,12 @@ class CoxHazardSpec(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     baseline_hazard_underway: float = 0.0005
+    baseline_hazard_escorted: float = 0.00015
     baseline_hazard_anchor: float = 0.0002
+    baseline_hazard_anchor_secured: float = 0.00010
+    baseline_hazard_anchor_unprotected: float = 0.00045
     baseline_daily_hazard: float = 0.0005
+    escort_hazard_suppression_ratio: float = 0.30
     beta_mli: float = 2.85
     beta_pmsc_distance_km: float = 0.004
     beta_ohi: float = -0.15
@@ -317,6 +330,7 @@ def load_engine_bundle(
 __all__ = [
     "DEFAULT_CORRIDOR_ID",
     "DEFAULT_VESSEL_PROFILE_ID",
+    "VALID_OPERATIONAL_STATES",
     "CorridorSpec",
     "VesselProfileSpec",
     "HydroEnvelopeSpec",

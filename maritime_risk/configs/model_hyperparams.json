@@ -37,8 +37,12 @@
   },
   "cox_hazard": {
     "baseline_hazard_underway": 0.0005,
+    "baseline_hazard_escorted": 0.00015,
     "baseline_hazard_anchor": 0.0002,
+    "baseline_hazard_anchor_secured": 0.0001,
+    "baseline_hazard_anchor_unprotected": 0.00045,
     "baseline_daily_hazard": 0.0005,
+    "escort_hazard_suppression_ratio": 0.30,
     "beta_mli": 2.85,
     "beta_pmsc_distance_km": 0.004,
     "beta_ohi": -0.15,

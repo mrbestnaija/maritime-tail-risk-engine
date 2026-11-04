@@ -17,9 +17,9 @@ Pure domain math: ZERO I/O, ZERO PRINT, pure Python/math.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import math
-from typing import Optional
+from typing import Any, Optional
 
 from .hydro_envelope import skiff_boarding_feasibility
 from .specs import CorridorSpec, CoxHazardSpec, HydroEnvelopeSpec, VesselProfileSpec
@@ -48,6 +48,21 @@ class JWCPricingResult:
     pricing_model: str = "lloyds_first_principles"
     regime_multiplier: float = 1.0
     operational_state: str = "UNDERWAY"
+    delta_ap_usd: float = 0.0
+    dividend_net_usd: float = 0.0
+    delta_reserve_usd: float = 0.0
+    escort_opex_cost_usd: float = 0.0
+    ap_lone_usd: float = 0.0
+    ap_escorted_usd: float = 0.0
+    ap_lone_bps: float = 0.0
+    ap_escorted_bps: float = 0.0
+    ap_unprotected_anchor_bps: float = 0.0
+    ap_secured_anchor_bps: float = 0.0
+    composite_cvar_99_usd: float = 0.0
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert pricing result to dictionary for JSON serialization and audit manifests."""
+        return asdict(self)
 
     @property
     def market_benchmark_bps(self) -> float:
@@ -74,6 +89,12 @@ def compute_jwc_7day_war_risk_ap(
     operational_state: Optional[str] = None,
     cox_spec: Optional[CoxHazardSpec] = None,
     commercial_baseline_bps: Optional[float] = None,
+    mothership_loitering_idx: float = 0.25,
+    distance_pmsc_km: float = 180.0,
+    wave_height_m: float = 1.2,
+    wind_knots: Optional[float] = None,
+    hydro_spec: Optional[HydroEnvelopeSpec] = None,
+    **kwargs: Any,
 ) -> JWCPricingResult:
     """Calculate first-principles Lloyd's JWC 7-Day Additional Premium and demurrage exposure.
 
@@ -168,6 +189,19 @@ def compute_jwc_7day_war_risk_ap(
     mispricing_spread_bps = actuarial_ap_bps - benchmark_bps
     per_transit_mispricing_usd = (mispricing_spread_bps / 10_000.0) * vessel_usd
 
+    dividend_data = compute_tactical_hardening_dividend(
+        mothership_loitering_idx=mothership_loitering_idx,
+        distance_pmsc_km=distance_pmsc_km,
+        wave_height_m=wave_height_m,
+        composite_cvar_99=cvar_99,
+        wind_knots=wind_knots,
+        vessel_spec=v_spec,
+        corridor_spec=c_spec,
+        cox_spec=cox_spec,
+        hydro_spec=hydro_spec,
+        regime_multiplier=reg_mult,
+    )
+
     return JWCPricingResult(
         calibrated_7d_breach_prob=p_7d,
         composite_cvar_99=cvar_99,
@@ -188,6 +222,17 @@ def compute_jwc_7day_war_risk_ap(
         pricing_model="lloyds_first_principles",
         regime_multiplier=reg_mult,
         operational_state=resolved_op_state,
+        delta_ap_usd=dividend_data["delta_ap_usd"],
+        dividend_net_usd=dividend_data["dividend_net_usd"],
+        delta_reserve_usd=dividend_data["delta_reserve_usd"],
+        escort_opex_cost_usd=dividend_data["escort_opex_cost_usd"],
+        ap_lone_usd=dividend_data["ap_lone_usd"],
+        ap_escorted_usd=dividend_data["ap_escorted_usd"],
+        ap_lone_bps=dividend_data["ap_lone_bps"],
+        ap_escorted_bps=dividend_data["ap_escorted_bps"],
+        ap_unprotected_anchor_bps=dividend_data["ap_unprotected_anchor_bps"],
+        ap_secured_anchor_bps=dividend_data["ap_secured_anchor_bps"],
+        composite_cvar_99_usd=dividend_data["composite_cvar_99_usd"],
     )
 
 
@@ -266,8 +311,14 @@ def compute_cox_7day_breach_probability(
     op_state = (
         corridor_spec.operational_state if corridor_spec and corridor_spec.operational_state else "UNDERWAY"
     ).upper()
-    if op_state == "AT_ANCHOR":
+    if op_state in ("AT_ANCHOR_SECURED",):
+        baseline_hazard = getattr(c_spec, "baseline_hazard_anchor_secured", 0.00010)
+    elif op_state in ("AT_ANCHOR",):
         baseline_hazard = getattr(c_spec, "baseline_hazard_anchor", c_spec.baseline_daily_hazard)
+    elif op_state in ("UNDERWAY_ESCORTED", "ESCORTED"):
+        baseline_hazard = getattr(c_spec, "baseline_hazard_escorted", 0.00015)
+    elif op_state in ("AT_ANCHOR_UNPROTECTED", "UNPROTECTED_ANCHOR"):
+        baseline_hazard = getattr(c_spec, "baseline_hazard_anchor_unprotected", 0.00045)
     else:
         baseline_hazard = getattr(c_spec, "baseline_hazard_underway", c_spec.baseline_daily_hazard)
     daily_hazard = baseline_hazard * math.exp(clamped_exponent)
@@ -281,6 +332,159 @@ def compute_cox_7day_breach_probability(
 
     p_breach_7d = float(max(min(p_breach_7d, 1.0), 0.0))
     return p_breach_7d, float(daily_hazard), float(ohi)
+
+
+def compute_tactical_hardening_dividend(
+    mothership_loitering_idx: float,
+    distance_pmsc_km: float,
+    wave_height_m: float,
+    composite_cvar_99: float,
+    wind_knots: Optional[float] = None,
+    vessel_spec: Optional[VesselProfileSpec] = None,
+    corridor_spec: Optional[CorridorSpec] = None,
+    cox_spec: Optional[CoxHazardSpec] = None,
+    hydro_spec: Optional[HydroEnvelopeSpec] = None,
+    regime_multiplier: float = 1.0,
+) -> dict[str, float]:
+    """Calculate the Escort & Anchorage Capital Dividend (Tactical Hardening Arbitrage).
+
+    Evaluates the financial and capital relief of naval/armed escort:
+    1. delta_ap_usd = ap_lone_usd - ap_escorted_usd (Gross AP Savings)
+    2. dividend_net_usd = delta_ap_usd - (voyage_window_days * daily_escort_cost_usd) (Net Arbitrage)
+    3. delta_reserve_usd = (p_breach_lone - p_breach_escorted) * composite_cvar_99_usd (Underwriter Capital Relief)
+
+    Returns
+    -------
+    dict[str, float]
+        Complete arbitrage breakdown dictionary.
+    """
+    v_spec = vessel_spec or VesselProfileSpec()
+    c_spec = corridor_spec or CorridorSpec()
+    cx_spec = cox_spec or CoxHazardSpec()
+    h_spec = hydro_spec or HydroEnvelopeSpec()
+
+    cvar_99 = max(float(composite_cvar_99), 0.0)
+    vessel_usd = max(float(v_spec.insured_vessel_usd), 1_000_000.0)
+    reg_mult = max(float(regime_multiplier), 0.0)
+    commercial_floor = getattr(cx_spec, "commercial_baseline_bps", 0.0)
+
+    # Operational delay & demurrage
+    delay_days = cvar_99 * v_spec.delay_days_per_cvar_unit
+    cvar_99_demurrage_usd = delay_days * v_spec.daily_demurrage_usd
+    catastrophic_loss_usd = (cvar_99 / 10.0) * v_spec.catastrophic_boarding_loss_usd
+    composite_cvar_99_usd = cvar_99_demurrage_usd + catastrophic_loss_usd
+
+    # 1. Lone voyage pricing (UNDERWAY_LONE)
+    c_lone = CorridorSpec(
+        corridor_id=c_spec.corridor_id,
+        operational_state="UNDERWAY_LONE",
+        jwc_market_benchmark_bps=c_spec.jwc_market_benchmark_bps,
+    )
+    p_lone, _, _ = compute_cox_7day_breach_probability(
+        mothership_loitering_idx=mothership_loitering_idx,
+        distance_pmsc_km=distance_pmsc_km,
+        wave_height_m=wave_height_m,
+        wind_knots=wind_knots,
+        vessel_spec=v_spec,
+        cox_spec=cx_spec,
+        hydro_spec=h_spec,
+        corridor_spec=c_lone,
+    )
+    expected_loss_lone = min(p_lone * composite_cvar_99_usd * reg_mult, vessel_usd)
+    ap_bps_lone = (expected_loss_lone / vessel_usd) * 10_000.0
+    if commercial_floor > 0.0:
+        ap_bps_lone = max(ap_bps_lone, commercial_floor)
+    ap_lone_usd = (ap_bps_lone / 10_000.0) * vessel_usd
+
+    # 2. Escorted voyage pricing (UNDERWAY_ESCORTED)
+    c_escorted = CorridorSpec(
+        corridor_id=c_spec.corridor_id,
+        operational_state="UNDERWAY_ESCORTED",
+        jwc_market_benchmark_bps=c_spec.jwc_market_benchmark_bps,
+    )
+    p_escorted, _, _ = compute_cox_7day_breach_probability(
+        mothership_loitering_idx=mothership_loitering_idx,
+        distance_pmsc_km=distance_pmsc_km,
+        wave_height_m=wave_height_m,
+        wind_knots=wind_knots,
+        vessel_spec=v_spec,
+        cox_spec=cx_spec,
+        hydro_spec=h_spec,
+        corridor_spec=c_escorted,
+    )
+    expected_loss_escorted = min(p_escorted * composite_cvar_99_usd * reg_mult, vessel_usd)
+    ap_bps_escorted = (expected_loss_escorted / vessel_usd) * 10_000.0
+    if commercial_floor > 0.0:
+        ap_bps_escorted = max(ap_bps_escorted, commercial_floor)
+    ap_escorted_usd = (ap_bps_escorted / 10_000.0) * vessel_usd
+
+    # 3. Unprotected Anchor pricing (AT_ANCHOR_UNPROTECTED)
+    c_unprotected = CorridorSpec(
+        corridor_id=c_spec.corridor_id,
+        operational_state="AT_ANCHOR_UNPROTECTED",
+        jwc_market_benchmark_bps=c_spec.jwc_market_benchmark_bps,
+    )
+    p_unprotected, _, _ = compute_cox_7day_breach_probability(
+        mothership_loitering_idx=mothership_loitering_idx,
+        distance_pmsc_km=distance_pmsc_km,
+        wave_height_m=wave_height_m,
+        wind_knots=wind_knots,
+        vessel_spec=v_spec,
+        cox_spec=cx_spec,
+        hydro_spec=h_spec,
+        corridor_spec=c_unprotected,
+    )
+    expected_loss_unprotected = min(p_unprotected * composite_cvar_99_usd * reg_mult, vessel_usd)
+    ap_bps_unprotected = (expected_loss_unprotected / vessel_usd) * 10_000.0
+    if commercial_floor > 0.0:
+        ap_bps_unprotected = max(ap_bps_unprotected, commercial_floor)
+
+    # 4. Secured Anchor pricing (AT_ANCHOR_SECURED)
+    c_secured = CorridorSpec(
+        corridor_id=c_spec.corridor_id,
+        operational_state="AT_ANCHOR_SECURED",
+        jwc_market_benchmark_bps=c_spec.jwc_market_benchmark_bps,
+    )
+    p_secured, _, _ = compute_cox_7day_breach_probability(
+        mothership_loitering_idx=mothership_loitering_idx,
+        distance_pmsc_km=distance_pmsc_km,
+        wave_height_m=wave_height_m,
+        wind_knots=wind_knots,
+        vessel_spec=v_spec,
+        cox_spec=cx_spec,
+        hydro_spec=h_spec,
+        corridor_spec=c_secured,
+    )
+    expected_loss_secured = min(p_secured * composite_cvar_99_usd * reg_mult, vessel_usd)
+    ap_bps_secured = (expected_loss_secured / vessel_usd) * 10_000.0
+    if commercial_floor > 0.0:
+        ap_bps_secured = max(ap_bps_secured, commercial_floor)
+
+    # Arbitrage Metrics
+    delta_ap_usd = max(float(ap_lone_usd - ap_escorted_usd), 0.0)
+    voyage_days = float(cx_spec.voyage_window_days)
+    daily_escort = float(v_spec.daily_escort_cost_usd)
+    escort_opex_cost_usd = float(voyage_days * daily_escort)
+    dividend_net_usd = float(delta_ap_usd - escort_opex_cost_usd)
+    delta_reserve_usd = float((p_lone - p_escorted) * composite_cvar_99_usd)
+
+    return {
+        "ap_lone_usd": float(ap_lone_usd),
+        "ap_escorted_usd": float(ap_escorted_usd),
+        "ap_lone_bps": float(ap_bps_lone),
+        "ap_escorted_bps": float(ap_bps_escorted),
+        "ap_unprotected_anchor_bps": float(ap_bps_unprotected),
+        "ap_secured_anchor_bps": float(ap_bps_secured),
+        "delta_ap_usd": delta_ap_usd,
+        "escort_opex_cost_usd": escort_opex_cost_usd,
+        "dividend_net_usd": dividend_net_usd,
+        "delta_reserve_usd": delta_reserve_usd,
+        "composite_cvar_99_usd": composite_cvar_99_usd,
+        "p_breach_lone": float(p_lone),
+        "p_breach_escorted": float(p_escorted),
+        "p_breach_unprotected": float(p_unprotected),
+        "p_breach_secured": float(p_secured),
+    }
 
 
 def price_cox_7day_war_risk_ap(
@@ -342,6 +546,19 @@ def price_cox_7day_war_risk_ap(
         wave_height_m=wave_height_m, wind_knots=wind_knots, spec=h_spec
     )
 
+    dividend_data = compute_tactical_hardening_dividend(
+        mothership_loitering_idx=mothership_loitering_idx,
+        distance_pmsc_km=distance_pmsc_km,
+        wave_height_m=wave_height_m,
+        composite_cvar_99=composite_cvar_99,
+        wind_knots=wind_knots,
+        vessel_spec=v_spec,
+        corridor_spec=c_spec,
+        cox_spec=cx_spec,
+        hydro_spec=h_spec,
+        regime_multiplier=reg_mult,
+    )
+
     return JWCPricingResult(
         calibrated_7d_breach_prob=p_breach_7d,
         composite_cvar_99=cvar_99,
@@ -362,6 +579,17 @@ def price_cox_7day_war_risk_ap(
         pricing_model="cox_proportional_hazards_jwc",
         regime_multiplier=reg_mult,
         operational_state=resolved_op_state,
+        delta_ap_usd=dividend_data["delta_ap_usd"],
+        dividend_net_usd=dividend_data["dividend_net_usd"],
+        delta_reserve_usd=dividend_data["delta_reserve_usd"],
+        escort_opex_cost_usd=dividend_data["escort_opex_cost_usd"],
+        ap_lone_usd=dividend_data["ap_lone_usd"],
+        ap_escorted_usd=dividend_data["ap_escorted_usd"],
+        ap_lone_bps=dividend_data["ap_lone_bps"],
+        ap_escorted_bps=dividend_data["ap_escorted_bps"],
+        ap_unprotected_anchor_bps=dividend_data["ap_unprotected_anchor_bps"],
+        ap_secured_anchor_bps=dividend_data["ap_secured_anchor_bps"],
+        composite_cvar_99_usd=dividend_data["composite_cvar_99_usd"],
     )
 
 
@@ -373,4 +601,5 @@ __all__ = [
     "compute_operational_hardening_index",
     "compute_cox_7day_breach_probability",
     "price_cox_7day_war_risk_ap",
+    "compute_tactical_hardening_dividend",
 ]

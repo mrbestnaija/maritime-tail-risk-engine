@@ -8,7 +8,7 @@
     "longitude_min": 6.5,
     "longitude_max": 7.5
   },
-  "timestamp_utc": "2026-11-02T22:31:08.240409+00:00",
+  "timestamp_utc": "2026-11-04T06:55:02.474039+00:00",
   "lineage_hashes": {
     "incident_dataset_sha256": "cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c",
     "civilian_telemetry_dataset_sha256": "c3685e086d228af1f3d0e44314f3c50e5af000406c0d55559d68d77c95157db7",
@@ -74,7 +74,13 @@
     "actuarial_7d_war_risk_ap_bps": 131.21892942880442,
     "jwc_market_benchmark_bps": 15.0,
     "mispricing_spread_bps": 116.21892942880442,
-    "per_transit_mispricing_usd": 987860.9001448376
+    "per_transit_mispricing_usd": 987860.9001448376,
+    "tactical_hardening_dividend": {
+      "delta_ap_usd": 62608.92945611907,
+      "dividend_net_usd": -66891.07054388092,
+      "delta_reserve_usd": 42627.35622544276,
+      "escort_opex_cost_usd": 129500.0
+    }
   },
   "author_block": {
     "author": "Nigerian Navy officer with 20+ years of operational experience",

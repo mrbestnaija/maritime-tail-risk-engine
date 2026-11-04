@@ -133,6 +133,12 @@ class AuditManifestBuilder:
                 "jwc_market_benchmark_bps": getattr(jwc_result, "jwc_market_benchmark_bps", 15.0),
                 "mispricing_spread_bps": getattr(jwc_result, "mispricing_spread_bps", None),
                 "per_transit_mispricing_usd": getattr(jwc_result, "per_transit_mispricing_usd", None),
+                "tactical_hardening_dividend": {
+                    "delta_ap_usd": getattr(jwc_result, "delta_ap_usd", 0.0),
+                    "dividend_net_usd": getattr(jwc_result, "dividend_net_usd", 0.0),
+                    "delta_reserve_usd": getattr(jwc_result, "delta_reserve_usd", 0.0),
+                    "escort_opex_cost_usd": getattr(jwc_result, "escort_opex_cost_usd", 0.0),
+                },
             },
             "author_block": {
                 "author": "Nigerian Navy officer with 20+ years of operational experience",

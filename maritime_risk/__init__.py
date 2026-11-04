@@ -82,6 +82,7 @@ from .core.jwc_pricer import (
     compute_cox_7day_breach_probability,
     compute_jwc_7day_war_risk_ap,
     compute_operational_hardening_index,
+    compute_tactical_hardening_dividend,
     price_cox_7day_war_risk_ap,
     price_jwc_7day_transit,
 )
@@ -193,6 +194,7 @@ __all__ = [
     "price_jwc_7day_transit",
     "compute_operational_hardening_index",
     "compute_cox_7day_breach_probability",
+    "compute_tactical_hardening_dividend",
     "price_cox_7day_war_risk_ap",
     "compute_regime_multiplier",
     "JWCPricingResult",

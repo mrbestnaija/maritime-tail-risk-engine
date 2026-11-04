@@ -104,6 +104,11 @@ class DefaultLloydsJWCPricer:
             regime_multiplier=reg_mult,
             cox_spec=cox_spec,
             commercial_baseline_bps=comm_floor,
+            mothership_loitering_idx=kwargs.get("mothership_loitering_idx", 0.25),
+            distance_pmsc_km=kwargs.get("distance_pmsc_km", 180.0),
+            wave_height_m=kwargs.get("wave_height_m", 1.2),
+            wind_knots=kwargs.get("wind_knots"),
+            hydro_spec=kwargs.get("hydro_spec"),
         )
 
 

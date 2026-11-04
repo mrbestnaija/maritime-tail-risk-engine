@@ -10,7 +10,7 @@ This document and the underlying risk model outputs are generated strictly for a
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
 - **Operational State**: `UNDERWAY`
 - **Regime Multiplier**: `1.4688x`
-- **Audit Timestamp**: `2026-11-02 22:29:55 UTC`
+- **Audit Timestamp**: `2026-11-04 06:54:43 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
@@ -148,7 +148,19 @@ Replaces naive multiplier heuristics with first-principles underwriting loss exp
 | **Lloyd's JWC Market Benchmark** | **`15.00 bps`** | Standard commercial market quote for transit |
 | **Underwriter Commercial Spread** | **`+116.22 bps`** | **`$+987,860.90 USD`** per transit underpricing hazard |
 
-#### Table 4D: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State
+#### Table 4D: Tactical Hardening Arbitrage (Escort & Anchorage Capital Dividend)
+Evaluates kinetic hazard suppression and capital relief across operational postures:
+
+| Arbitrage / Dividend Metric | Value | Forensic / Operational Significance |
+|---|---|---|
+| **Lone Underway AP Rate** | **`10.53 bps`** | Fair AP for unescorted fairway voyage (`$89,498.45 USD`) |
+| **Escorted Underway AP Rate** | **`3.16 bps`** | Fair AP with dedicated naval escort bubble (`$26,889.52 USD`) |
+| **Gross AP Premium Savings** | **`$62,608.93 USD`** | Direct insurance premium discount achieved via escort |
+| **Escort Deployment OPEX** | **`$129,500.00 USD`** | Charterparty security cost at $18,500/day |
+| **Net Tactical Arbitrage Dividend** | **`$-66,891.07 USD`** | AVOIDED OPEX (Threat benign/suppressed) |
+| **Underwriter Capital Relief** | **`$42,627.36 USD`** | Solvency II Expected Shortfall reserve charge reduction |
+
+#### Table 4E: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State
 Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$):
 
 | SPRT Surveillance Metric | Value | Operational Watch Status |

@@ -27,6 +27,7 @@ from .jwc_pricer import (
     JWCPriceResult,
     JWCPricingResult,
     compute_jwc_7day_war_risk_ap,
+    compute_tactical_hardening_dividend,
     price_jwc_7day_transit,
 )
 from .models import (
@@ -97,6 +98,7 @@ __all__ = [
     "compute_actuarial_war_risk_loading_bps",
     "compute_gpd_var_cvar",
     "compute_jwc_7day_war_risk_ap",
+    "compute_tactical_hardening_dividend",
     "price_jwc_7day_transit",
     "decompose_mssa",
     "evaluate_hydrodynamic_envelope",
