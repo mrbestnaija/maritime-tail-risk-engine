@@ -172,7 +172,7 @@ def compute_jwc_7day_war_risk_ap(
 
     # 4. First-principles expected 7-day tail exposure for the transiting vessel (scaled by regime multiplier)
     expected_7d_tail_loss_usd = effective_vessel_prob * (cvar_99_demurrage_usd + catastrophic_loss_usd) * reg_mult
-    # Capital Solvency Guard: expected tail loss cannot exceed insured vessel hull value
+    # Tail Risk Cap Guard: expected tail loss cannot exceed insured vessel hull value
     expected_7d_tail_loss_usd = min(expected_7d_tail_loss_usd, vessel_usd)
 
     # 5. Fair actuarial war-risk AP in basis points (1 bps = 0.0001 of insured hull value)
@@ -346,12 +346,12 @@ def compute_tactical_hardening_dividend(
     hydro_spec: Optional[HydroEnvelopeSpec] = None,
     regime_multiplier: float = 1.0,
 ) -> dict[str, float]:
-    """Calculate the Escort & Anchorage Capital Dividend (Tactical Hardening Arbitrage).
+    """Calculate the Escort & Anchorage Tactical Hardening Arbitrage.
 
-    Evaluates the financial and capital relief of naval/armed escort:
+    Evaluates the financial savings and Expected Shortfall (CVaR_99) reduction of naval/armed escort:
     1. delta_ap_usd = ap_lone_usd - ap_escorted_usd (Gross AP Savings)
     2. dividend_net_usd = delta_ap_usd - (voyage_window_days * daily_escort_cost_usd) (Net Arbitrage)
-    3. delta_reserve_usd = (p_breach_lone - p_breach_escorted) * composite_cvar_99_usd (Underwriter Capital Relief)
+    3. delta_reserve_usd = (p_breach_lone - p_breach_escorted) * composite_cvar_99_usd (Expected Shortfall / CVaR_99 Reduction)
 
     Returns
     -------
@@ -463,7 +463,9 @@ def compute_tactical_hardening_dividend(
     # Arbitrage Metrics
     delta_ap_usd = max(float(ap_lone_usd - ap_escorted_usd), 0.0)
     voyage_days = float(cx_spec.voyage_window_days)
-    daily_escort = float(v_spec.daily_escort_cost_usd)
+    daily_escort = float(getattr(cx_spec, "escort_daily_rate_usd", 0.0)) or float(
+        getattr(v_spec, "daily_escort_cost_usd", 0.0)
+    )
     escort_opex_cost_usd = float(voyage_days * daily_escort)
     dividend_net_usd = float(delta_ap_usd - escort_opex_cost_usd)
     delta_reserve_usd = float((p_lone - p_escorted) * composite_cvar_99_usd)
@@ -531,7 +533,7 @@ def price_cox_7day_war_risk_ap(
 
     # First-principles expected loss: p_breach_7d directly models vessel voyage breach (scaled by regime multiplier)
     expected_7d_tail_loss_usd = p_breach_7d * (cvar_99_demurrage_usd + catastrophic_loss_usd) * reg_mult
-    # Capital Solvency Guard: expected tail loss cannot exceed insured vessel hull value
+    # Tail Risk Cap Guard: expected tail loss cannot exceed insured vessel hull value
     expected_7d_tail_loss_usd = min(expected_7d_tail_loss_usd, vessel_usd)
 
     # Fair actuarial AP in basis points (1 bps = 0.0001 of hull)

@@ -41,7 +41,7 @@ underwriters pricing risk based on published intelligence bulletins are pricing 
 - **Duplicate Reduction Ratio**: `8.3%`
 
 #### The Union Envelope Invariant in Cross-Feed Reconciliation
-When multiple intelligence agencies report the same incident (e.g. MDAT-GOG, IMB, and Dryad), severity intervals often diverge due to differing assessment criteria. Underwriter solvency mandates computing the **Union Envelope** ($\min(\text{min}), \max(\text{max})$):
+When multiple intelligence agencies report the same incident (e.g. MDAT-GOG, IMB, and Dryad), severity intervals often diverge due to differing assessment criteria. Underwriter risk integrity mandates computing the **Union Envelope** ($\min(\text{min}), \max(\text{max})$):
 
 | Deduplicated ID | Primary Vessel | Feeds Merged | Individual Feed Severities | Union Envelope Severity | Imputed Centroid (Lat, Lon) |
 |---|---|---|---|---|---|

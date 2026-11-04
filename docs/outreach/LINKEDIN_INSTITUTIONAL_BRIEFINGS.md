@@ -38,7 +38,7 @@ $$N_{\text{unobserved}} \sim \text{Poisson}\left(\int_{t_{\text{decision}} - \ba
 ### Underwriting Impact
 1. **Elimination of "Silent Period" Underpricing**: Premiums dynamically adjust upward when recent reporting volume slows anomalously, reflecting expected unlogged activity.
 2. **Backtesting Fidelity**: Replays historical underwriting decisions using *only* the information available at the exact hour of quote delivery.
-3. **Audit Trail**: Every quote is cryptographically linked to a point-in-time SHA-256 data manifest, providing irrefutable documentation for reinsurance audits and Solvency II capital adequacy reviews.
+3. **Audit Trail**: Every quote is cryptographically linked to a point-in-time SHA-256 data manifest, providing irrefutable documentation for reinsurance audits and internal model validation reviews.
 
 ---
 

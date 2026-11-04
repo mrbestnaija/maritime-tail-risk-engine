@@ -180,6 +180,7 @@ class CoxHazardSpec(BaseModel):
     baseline_hazard_anchor_unprotected: float = 0.00045
     baseline_daily_hazard: float = 0.0005
     escort_hazard_suppression_ratio: float = 0.30
+    escort_daily_rate_usd: float = 18500.0
     beta_mli: float = 2.85
     beta_pmsc_distance_km: float = 0.004
     beta_ohi: float = -0.15

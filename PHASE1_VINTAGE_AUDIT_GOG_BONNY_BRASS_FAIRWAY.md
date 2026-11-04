@@ -10,7 +10,7 @@ This document and the underlying risk model outputs are generated strictly for a
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
 - **Operational State**: `UNDERWAY`
 - **Regime Multiplier**: `1.4688x`
-- **Audit Timestamp**: `2026-11-04 06:54:43 UTC`
+- **Audit Timestamp**: `2026-11-04 07:11:31 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
@@ -41,7 +41,7 @@ underwriters pricing risk based on published intelligence bulletins are pricing 
 - **Duplicate Reduction Ratio**: `22.5%`
 
 #### The Union Envelope Invariant in Cross-Feed Reconciliation
-When multiple intelligence agencies report the same incident (e.g. MDAT-GOG, IMB, and Dryad), severity intervals often diverge due to differing assessment criteria. Underwriter solvency mandates computing the **Union Envelope** ($\min(\text{min}), \max(\text{max})$):
+When multiple intelligence agencies report the same incident (e.g. MDAT-GOG, IMB, and Dryad), severity intervals often diverge due to differing assessment criteria. Underwriter risk integrity mandates computing the **Union Envelope** ($\min(\text{min}), \max(\text{max})$):
 
 | Deduplicated ID | Primary Vessel | Feeds Merged | Individual Feed Severities | Union Envelope Severity | Imputed Centroid (Lat, Lon) |
 |---|---|---|---|---|---|
@@ -148,8 +148,8 @@ Replaces naive multiplier heuristics with first-principles underwriting loss exp
 | **Lloyd's JWC Market Benchmark** | **`15.00 bps`** | Standard commercial market quote for transit |
 | **Underwriter Commercial Spread** | **`+116.22 bps`** | **`$+987,860.90 USD`** per transit underpricing hazard |
 
-#### Table 4D: Tactical Hardening Arbitrage (Escort & Anchorage Capital Dividend)
-Evaluates kinetic hazard suppression and capital relief across operational postures:
+#### Table 4D: Tactical Hardening Arbitrage (Escort & Anchorage Risk Dividend)
+Evaluates kinetic hazard suppression and Expected Shortfall (CVaR_99) reduction across operational postures:
 
 | Arbitrage / Dividend Metric | Value | Forensic / Operational Significance |
 |---|---|---|
@@ -158,7 +158,7 @@ Evaluates kinetic hazard suppression and capital relief across operational postu
 | **Gross AP Premium Savings** | **`$62,608.93 USD`** | Direct insurance premium discount achieved via escort |
 | **Escort Deployment OPEX** | **`$129,500.00 USD`** | Charterparty security cost at $18,500/day |
 | **Net Tactical Arbitrage Dividend** | **`$-66,891.07 USD`** | AVOIDED OPEX (Threat benign/suppressed) |
-| **Underwriter Capital Relief** | **`$42,627.36 USD`** | Solvency II Expected Shortfall reserve charge reduction |
+| **Expected Shortfall (CVaR_99) Reduction** | **`$42,627.36 USD`** | Conditional tail risk (CVaR_99) exposure reduction |
 
 #### Table 4E: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State
 Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$):

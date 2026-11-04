@@ -32,7 +32,7 @@ Commercial maritime transit through designated High-Risk Areas (HRA) and Joint W
 Underwriters traditionally quote 7-day Additional Premium (AP) ratings as static basis-point (bps) loadings on Hull & Machinery (H&M) agreed valuations. However, standard actuarial and algorithmic early-warning tools in this theater suffer from three fatal mathematical vulnerabilities:
 
 1. **The Reporting-Lag Blind-Spot**: Incidents reported by civilian or naval coordination centers are cataloged by their *publication date* ($t_{\text{pub}}$) rather than their true *physical occurrence date* ($t_{\text{event}}$). In an active piracy surge, an underwriter assessing risk on day $t$ using the latest published bulletin is blind to attacks that occurred on days $t-1, \dots, t-7$, underestimating rolling Value at Risk by more than one-third.
-2. **Divergent Agency Telemetry & Tail Clipping**: Independent reporting entities evaluate the same boarding event with asymmetric severity scores. Taking naive averages or retaining only the primary reporting agency systematically truncates upper-tail severity bounds, violating solvency capital requirements under Solvency II and Lloyd's Syndicate Standards.
+2. **Divergent Agency Telemetry & Tail Clipping**: Independent reporting entities evaluate the same boarding event with asymmetric severity scores. Taking naive averages or retaining only the primary reporting agency systematically truncates upper-tail severity bounds, violating actuarial tail risk integrity under Lloyd's Syndicate Standards.
 3. **Environmental Conflation**: Pirate skiffs (fast wooden or fiberglass skiffs propelled by twin $200\text{ hp}$ outboards) cannot operate effectively in elevated seas ($H_s > 1.85\text{m}$). Without isolating physical sea-state harmonics from intentional hostile intent, algorithms issue false alarms during calm weather and miss attacks during unexpected seasonal lulls.
 
 To remediate these structural defects, this paper establishes a mathematically verified, open-source pipeline implemented in `maritime-tail-risk-engine` (Python 3.10+, MIT License).
@@ -67,7 +67,7 @@ $$\text{Bias}(\text{VaR}_{0.99}) = \frac{\text{VaR}_{0.99}(R_t^{\text{pub}}) - \
 
 When $K$ independent feeds $\{\mathcal{F}_k\}_{k=1}^K$ report on an incident occurring within spatial radius $\epsilon_d \le 15\text{ nm}$ and temporal window $\epsilon_t \le 21600\text{ s}$ ($6\text{ hours}$), agency severity ratings diverge: $\mathcal{S}_i^{(k)} = [s_{\text{min}, i}^{(k)}, s_{\text{max}, i}^{(k)}]$.
 
-**Definition 1 (Solvency-Consistent Union Envelope).**  
+**Definition 1 (Tail-Consistent Union Envelope).**  
 To satisfy coherent risk measure properties (subadditivity and monotonicity under Artzner et al., 1999), cross-feed reconciliation must take the supremum envelope:
 $$\mathcal{S}_i^{\text{union}} = \left[\min_{k \in \mathcal{K}_i} s_{\text{min}, i}^{(k)}, \; \max_{k \in \mathcal{K}_i} s_{\text{max}, i}^{(k)}\right]$$
 Centroid coordinates are imputed as the arithmetic mean across reporting feeds:

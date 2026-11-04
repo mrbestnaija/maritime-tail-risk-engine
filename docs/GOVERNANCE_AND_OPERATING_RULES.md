@@ -42,7 +42,7 @@ These rules codify verified professional, legal, and mathematical constraints de
   $$\text{"Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways."}$$
 
 ### Rule 2.4 — Prohibition of Unverified Aspirational Claims
-- Unverified Phase 2+ aspirational features—including claims regarding "Solvency II capital relief", "live dynamic oracles", "regime-switching multipliers", or speculative commercial underwriting spreads—are strictly prohibited from all public documentation and audit outputs until independently audited in future project phases.
+- Unverified Phase 2+ aspirational features—including claims regarding statutory reserve reductions, "live dynamic oracles", "regime-switching multipliers", or speculative commercial underwriting spreads—are strictly prohibited from all public documentation and audit outputs until independently audited in future project phases.
 
 ---
 

@@ -491,7 +491,7 @@ def compute_tail_risk(
     When xi >= 1.0 (raw MLE spike), the mean of the Generalized Pareto Distribution
     diverges to infinity (E[X] = infinity). The engine must NOT clamp xi to 0.95 to force
     a finite price. Instead, it must explicitly REFUSE to price by raising UninsurableRiskException,
-    protecting the capital pool from catastrophic insolvency.
+    protecting the underwriting pool from infinite-mean tail exposures.
 
     Parameters
     ----------
@@ -556,7 +556,7 @@ def compute_tail_risk(
     if xi_val >= 1.0:
         raise UninsurableRiskException(
             f"Uninsurable tail risk: GPD shape xi={xi_val:.4f} >= 1.0 implies infinite-mean exposure (E[X] = infinity). "
-            "Engine explicitly refuses to price uninsurable risk to protect underwriter solvency."
+            "Engine explicitly refuses to price uninsurable risk where mean tail expectation is undefined."
         )
 
     g_spec = spec or GPDFitterSpec()

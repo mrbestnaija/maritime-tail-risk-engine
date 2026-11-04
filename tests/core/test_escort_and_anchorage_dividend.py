@@ -9,7 +9,7 @@ Phase 2 Actuarial & Naval Operational Invariants:
 3. Monsoonal Swamping (Avoided Security Waste):
    When H_s > 1.85m (Sea State 6), small-skiff boarding feasibility decays exponentially,
    yielding dividend_net_usd < 0 (hiring escorts in heavy seas is wasted OPEX).
-4. Underwriter Solvency II Capital Reserve Relief:
+4. Expected Shortfall (CVaR_99) Reduction:
    delta_reserve_usd = (p_lone - p_escorted) * composite_cvar_99_usd > 0.
 """
 
@@ -201,7 +201,7 @@ def test_positive_arbitrage_in_high_threat_regime():
         f"Expected positive dividend in high threat, got {dividend['dividend_net_usd']}"
     )
 
-    # 4. Underwriter Capital Relief must be positive
+    # 4. Expected Shortfall (CVaR_99) reduction must be positive
     assert dividend["delta_reserve_usd"] > 0.0
     assert dividend["p_breach_lone"] > dividend["p_breach_escorted"]
 
@@ -251,8 +251,8 @@ def test_monsoonal_swamping_avoided_security_waste():
     assert dividend_heavy_sea["dividend_net_usd"] <= -50_000.0
 
 
-def test_underwriter_capital_reserve_relief_scaling():
-    """Verify underwriter Solvency II capital reserve relief scales monotonically with CVaR."""
+def test_expected_shortfall_cvar_99_reduction_scaling():
+    """Verify Expected Shortfall (CVaR_99) reduction scales monotonically with CVaR."""
     vessel = VesselProfileSpec()
     cox = CoxHazardSpec()
     corridor = CorridorSpec()

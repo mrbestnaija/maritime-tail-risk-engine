@@ -43,6 +43,7 @@
     "baseline_hazard_anchor_unprotected": 0.00045,
     "baseline_daily_hazard": 0.0005,
     "escort_hazard_suppression_ratio": 0.30,
+    "escort_daily_rate_usd": 18500.0,
     "beta_mli": 2.85,
     "beta_pmsc_distance_km": 0.004,
     "beta_ohi": -0.15,
