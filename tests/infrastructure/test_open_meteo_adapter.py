@@ -4,7 +4,9 @@ Verifies:
 1. Mathematical invariants of Cubic Delta Kernel (psi_3) smoothing (continuity, vanishing boundaries, symmetry).
 2. Declarative configuration loading with zero hardcoded URLs or coordinates.
 3. Circuit breaker degradation on timeout/failure falling back to 90th percentile historical Hs with [ESTIMATED_HYDRODYNAMICS].
-4. Successful response parsing with Cubic Delta smoothing and [LIVE_METOCEAN] metadata tag.
+4. SQLite fallback querying canonical civilian_sensor_telemetry and fallback civilian_telemetry.
+5. Successful response parsing with Cubic Delta smoothing and [LIVE_METOCEAN] metadata tag.
+6. Root infrastructure shim compatibility.
 """
 
 from __future__ import annotations
@@ -12,10 +14,12 @@ from __future__ import annotations
 import io
 import json
 import sqlite3
+import tempfile
 import urllib.error
 from unittest.mock import MagicMock, patch
 import pytest
 
+# Test import from canonical package
 from maritime_risk.infrastructure.open_meteo_adapter import (
     OpenMeteoHydroAdapter,
     OpenMeteoHydroResult,
@@ -23,6 +27,16 @@ from maritime_risk.infrastructure.open_meteo_adapter import (
     load_external_feeds_config,
     smooth_wave_heights_cubic_delta,
 )
+# Test import from root forwarder shim
+import infrastructure.open_meteo_adapter as shim_adapter
+
+
+def test_root_shim_exports_match():
+    """Verify infrastructure/open_meteo_adapter.py forwarder exports all symbols."""
+    assert shim_adapter.OpenMeteoHydroAdapter is OpenMeteoHydroAdapter
+    assert shim_adapter.OpenMeteoHydroResult is OpenMeteoHydroResult
+    assert shim_adapter.cubic_delta_kernel is cubic_delta_kernel
+    assert shim_adapter.smooth_wave_heights_cubic_delta is smooth_wave_heights_cubic_delta
 
 
 def test_cubic_delta_kernel_mathematical_invariants():
@@ -76,8 +90,33 @@ def test_external_feeds_config_loading_zero_hardcoding():
     assert "api_endpoint" in meteo
     assert "bounding_boxes" in meteo
     assert "GOG_BONNY_BRASS_FAIRWAY" in meteo["bounding_boxes"]
+    assert "GOG_ESCRAVOS_FORCADOS_APPROACH" in meteo["bounding_boxes"]
+    assert "GOG_LAGOS_SAA_ANCHORAGE" in meteo["bounding_boxes"]
+    assert meteo["bounding_boxes"]["GOG_LAGOS_SAA_ANCHORAGE"]["centroid_lat"] == 6.225
+    assert meteo["bounding_boxes"]["GOG_LAGOS_SAA_ANCHORAGE"]["centroid_lon"] == 3.35
     assert "circuit_breaker" in meteo
     assert meteo["circuit_breaker"]["fallback_tag"] == "[ESTIMATED_HYDRODYNAMICS]"
+    assert meteo["circuit_breaker"]["default_fallback_wave_height_m"] == 2.15
+
+
+def test_external_feeds_config_missing_raises_filenotfound():
+    """Verify attempting to load configuration from empty dir raises FileNotFoundError."""
+    with tempfile.TemporaryDirectory() as empty_dir:
+        with pytest.raises(FileNotFoundError):
+            load_external_feeds_config(config_dir=empty_dir)
+
+
+def test_corridor_coordinate_resolution_all_corridors():
+    """Verify all 3 configured corridors resolve centroids correctly."""
+    adapter = OpenMeteoHydroAdapter()
+    lat1, lon1 = adapter._resolve_coordinates("GOG_BONNY_BRASS_FAIRWAY")
+    assert (lat1, lon1) == (4.25, 7.0)
+
+    lat2, lon2 = adapter._resolve_coordinates("GOG_ESCRAVOS_FORCADOS_APPROACH")
+    assert (lat2, lon2) == (5.45, 5.15)
+
+    lat3, lon3 = adapter._resolve_coordinates("GOG_LAGOS_SAA_ANCHORAGE")
+    assert (lat3, lon3) == (6.225, 3.35)
 
 
 def test_circuit_breaker_activates_on_forced_failure():
@@ -90,12 +129,37 @@ def test_circuit_breaker_activates_on_forced_failure():
     assert isinstance(res, OpenMeteoHydroResult)
     assert res.is_estimated is True
     assert res.metadata_tag == "[ESTIMATED_HYDRODYNAMICS]"
-    assert res.wave_height_m > 0.0
+    assert res.wave_height_m == 2.15
     assert res.sample_size == 0
 
 
-def test_circuit_breaker_pulls_90th_percentile_from_sqlite():
-    """Verify circuit breaker queries SQLite database for 90th percentile historical wave height."""
+def test_circuit_breaker_pulls_90th_percentile_from_canonical_civilian_sensor_telemetry():
+    """Verify circuit breaker queries civilian_sensor_telemetry table for 90th percentile historical wave height."""
+    conn = sqlite3.connect(":memory:")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE civilian_sensor_telemetry (
+            record_id TEXT PRIMARY KEY,
+            significant_wave_height_m REAL
+        )
+    """)
+    # Insert 10 observations with known 90th percentile: 1.0, 2.0, ..., 10.0 -> 90th percentile = 9.1
+    for i in range(1, 11):
+        cursor.execute(
+            "INSERT INTO civilian_sensor_telemetry (record_id, significant_wave_height_m) VALUES (?, ?)",
+            (f"R-{i}", float(i)),
+        )
+    conn.commit()
+
+    adapter = OpenMeteoHydroAdapter(db_connection=conn)
+    res = adapter.fetch_live_hydrodynamics(force_circuit_breaker=True)
+    assert res.is_estimated is True
+    assert res.metadata_tag == "[ESTIMATED_HYDRODYNAMICS]"
+    assert res.wave_height_m == pytest.approx(9.1, abs=0.1)
+
+
+def test_circuit_breaker_pulls_90th_percentile_from_legacy_civilian_telemetry():
+    """Verify circuit breaker falls back to civilian_telemetry if civilian_sensor_telemetry does not exist."""
     conn = sqlite3.connect(":memory:")
     cursor = conn.cursor()
     cursor.execute("""
@@ -104,7 +168,6 @@ def test_circuit_breaker_pulls_90th_percentile_from_sqlite():
             significant_wave_height_m REAL
         )
     """)
-    # Insert 10 observations with known 90th percentile: 1.0, 2.0, ..., 10.0 -> 90th percentile = 9.1
     for i in range(1, 11):
         cursor.execute(
             "INSERT INTO civilian_telemetry (telemetry_id, significant_wave_height_m) VALUES (?, ?)",

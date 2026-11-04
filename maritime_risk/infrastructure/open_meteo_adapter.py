@@ -15,6 +15,7 @@ ORCID: 0009-0008-0112-9273
 from __future__ import annotations
 
 import json
+import sqlite3
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -113,53 +114,29 @@ def smooth_wave_heights_cubic_delta(
 
 def load_external_feeds_config(config_dir: Optional[Path | str] = None) -> dict[str, Any]:
     """Load declarative external feeds configuration from disk."""
-    search_dirs: list[Path] = []
     if config_dir is not None:
-        search_dirs.append(Path(config_dir))
+        explicit_file = Path(config_dir) / "external_feeds.json"
+        if explicit_file.exists():
+            return json.loads(explicit_file.read_text(encoding="utf-8"))
+        raise FileNotFoundError(
+            f"External feeds configuration 'external_feeds.json' not found in specified directory: {config_dir}"
+        )
 
     curr_file = Path(__file__).resolve()
-    # Check project root configs/ and package configs/
-    search_dirs.extend([
+    search_dirs = [
         curr_file.parent.parent.parent / "configs",
         curr_file.parent.parent / "configs",
         Path.cwd() / "configs",
-    ])
+    ]
 
     for c_dir in search_dirs:
         cfg_file = c_dir / "external_feeds.json"
         if cfg_file.exists():
             return json.loads(cfg_file.read_text(encoding="utf-8"))
 
-    # Declarative fallback template if file missing
-    return {
-        "open_meteo": {
-            "api_endpoint": "https://marine-api.open-meteo.com/v1/marine",
-            "api_version": "v1",
-            "timeout_seconds": 5.0,
-            "hourly_variables": ["wave_height", "wave_period"],
-            "default_corridor_id": "GOG_BONNY_BRASS_FAIRWAY",
-            "bounding_boxes": {
-                "GOG_BONNY_BRASS_FAIRWAY": {
-                    "latitude_min": 4.0,
-                    "latitude_max": 4.5,
-                    "longitude_min": 6.5,
-                    "longitude_max": 7.5,
-                    "centroid_lat": 4.25,
-                    "centroid_lon": 7.0,
-                }
-            },
-            "circuit_breaker": {
-                "timeout_seconds": 5.0,
-                "fallback_historical_percentile": 90.0,
-                "default_fallback_wave_height_m": 2.15,
-                "fallback_tag": "[ESTIMATED_HYDRODYNAMICS]",
-            },
-            "cubic_delta_kernel": {
-                "bandwidth_hours": 3.0,
-                "smoothing_parameter_delta": 1.0,
-            },
-        }
-    }
+    raise FileNotFoundError(
+        f"External feeds configuration 'external_feeds.json' not found in search paths: {[str(d) for d in search_dirs]}"
+    )
 
 
 class OpenMeteoHydroAdapter:
@@ -176,21 +153,28 @@ class OpenMeteoHydroAdapter:
         self.db_conn = db_connection
 
     def _resolve_coordinates(self, corridor_id: str) -> tuple[float, float]:
-        """Resolve centroid latitude and longitude for a given corridor ID."""
+        """Resolve centroid latitude and longitude for a given corridor ID from configuration."""
         bboxes = self.meteo_cfg.get("bounding_boxes", {})
         if corridor_id in bboxes:
             c_info = bboxes[corridor_id]
-            lat = float(c_info.get("centroid_lat", (c_info.get("latitude_min", 4.0) + c_info.get("latitude_max", 4.5)) / 2.0))
-            lon = float(c_info.get("centroid_lon", (c_info.get("longitude_min", 6.5) + c_info.get("longitude_max", 7.5)) / 2.0))
+            if "centroid_lat" in c_info and "centroid_lon" in c_info:
+                return float(c_info["centroid_lat"]), float(c_info["centroid_lon"])
+            lat = (float(c_info["latitude_min"]) + float(c_info["latitude_max"])) / 2.0
+            lon = (float(c_info["longitude_min"]) + float(c_info["longitude_max"])) / 2.0
             return lat, lon
 
-        # Fallback to Bonny/Brass fairway centroid
-        default_cid = self.meteo_cfg.get("default_corridor_id", "GOG_BONNY_BRASS_FAIRWAY")
-        if default_cid in bboxes:
+        default_cid = self.meteo_cfg.get("default_corridor_id")
+        if default_cid and default_cid in bboxes:
             c_info = bboxes[default_cid]
-            return float(c_info.get("centroid_lat", 4.25)), float(c_info.get("centroid_lon", 7.0))
+            if "centroid_lat" in c_info and "centroid_lon" in c_info:
+                return float(c_info["centroid_lat"]), float(c_info["centroid_lon"])
+            lat = (float(c_info["latitude_min"]) + float(c_info["latitude_max"])) / 2.0
+            lon = (float(c_info["longitude_min"]) + float(c_info["longitude_max"])) / 2.0
+            return lat, lon
 
-        return 4.25, 7.0
+        raise KeyError(
+            f"Coordinates for corridor '{corridor_id}' not found in external feeds configuration."
+        )
 
     def _get_historical_fallback_wave_height(self) -> float:
         """Query SQLite database for 90th percentile historical wave height or return config default."""
@@ -201,10 +185,16 @@ class OpenMeteoHydroAdapter:
         if self.db_conn is not None:
             try:
                 cursor = self.db_conn.cursor()
-                cursor.execute(
-                    "SELECT significant_wave_height_m FROM civilian_telemetry "
-                    "WHERE significant_wave_height_m IS NOT NULL"
-                )
+                try:
+                    cursor.execute(
+                        "SELECT significant_wave_height_m FROM civilian_sensor_telemetry "
+                        "WHERE significant_wave_height_m IS NOT NULL"
+                    )
+                except sqlite3.OperationalError:
+                    cursor.execute(
+                        "SELECT significant_wave_height_m FROM civilian_telemetry "
+                        "WHERE significant_wave_height_m IS NOT NULL"
+                    )
                 rows = cursor.fetchall()
                 if rows:
                     vals = [float(r[0]) for r in rows if r[0] is not None]
@@ -217,16 +207,23 @@ class OpenMeteoHydroAdapter:
 
     def fetch_live_hydrodynamics(
         self,
-        corridor_id: str = "GOG_BONNY_BRASS_FAIRWAY",
+        corridor_id: Optional[str] = None,
         target_timestamp: Optional[datetime] = None,
         force_circuit_breaker: bool = False,
     ) -> OpenMeteoHydroResult:
         """Fetch real-time wave heights via Open-Meteo REST API or activate circuit breaker fallback."""
+        if corridor_id is None:
+            corridor_id = self.meteo_cfg.get("default_corridor_id")
+            if not corridor_id:
+                raise KeyError("No corridor_id supplied and default_corridor_id missing in configuration")
+
         now_utc = datetime.now(timezone.utc).isoformat()
         cb_cfg = self.meteo_cfg.get("circuit_breaker", {})
         fallback_tag = str(cb_cfg.get("fallback_tag", "[ESTIMATED_HYDRODYNAMICS]"))
         timeout_sec = float(cb_cfg.get("timeout_seconds", 5.0))
-        endpoint = str(self.meteo_cfg.get("api_endpoint", "https://marine-api.open-meteo.com/v1/marine"))
+        if "api_endpoint" not in self.meteo_cfg:
+            raise KeyError("Missing required 'api_endpoint' in open_meteo configuration")
+        endpoint = str(self.meteo_cfg["api_endpoint"])
 
         if force_circuit_breaker:
             fallback_hs = self._get_historical_fallback_wave_height()
