@@ -1,4 +1,12 @@
 {
+  "open_meteo_url": "https://marine-api.open-meteo.com/v1/marine",
+  "incident_feed_url": "https://api.example.com/maritime_incidents",
+  "gulf_of_guinea_bbox": {
+    "lat_min": -5.0,
+    "lat_max": 7.0,
+    "lon_min": -10.0,
+    "lon_max": 12.0
+  },
   "open_meteo": {
     "api_endpoint": "https://marine-api.open-meteo.com/v1/marine",
     "api_version": "v1",
@@ -43,6 +51,21 @@
     "cubic_delta_kernel": {
       "bandwidth_hours": 3.0,
       "smoothing_parameter_delta": 1.0
+    }
+  },
+  "incident_feed": {
+    "api_endpoint": "https://api.example.com/maritime_incidents",
+    "timeout_seconds": 5.0,
+    "circuit_breaker": {
+      "timeout_seconds": 5.0,
+      "fallback_tag": "[ESTIMATED_INCIDENTS]"
+    },
+    "cubic_exponential_bounds": {
+      "min_xi": -0.5,
+      "max_xi": 0.95,
+      "min_sigma": 0.01,
+      "decay_rate": 1.0,
+      "variance_cap": 2.5
     }
   }
 }

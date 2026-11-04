@@ -45,6 +45,10 @@ class OpenMeteoHydroResult:
         """Serialize result to dictionary representation."""
         return asdict(self)
 
+    def __iter__(self):
+        """Allow unpacking as (wave_height_m, metadata_tag)."""
+        return iter((self.wave_height_m, self.metadata_tag))
+
 
 def cubic_delta_kernel(u: float) -> float:
     """Evaluate compact Cubic Delta Kernel psi_3(u) = (1 - |u|^3)^3 for |u| < 1.
@@ -317,11 +321,78 @@ class OpenMeteoHydroAdapter:
                 sample_size=0,
             )
 
+    def fetch_wave_heights(
+        self,
+        corridor_id: Optional[str] = None,
+        force_circuit_breaker: bool = False,
+    ) -> tuple[float, str]:
+        """Fetch significant wave height and status tag tuple."""
+        res = self.fetch_live_hydrodynamics(
+            corridor_id=corridor_id,
+            force_circuit_breaker=force_circuit_breaker,
+        )
+        return res.wave_height_m, res.metadata_tag
+
+
+def smooth_cubic_delta(
+    h_s: Sequence[float] | float,
+    bandwidth_hours: float = 3.0,
+    delta: float = 1.0,
+) -> float:
+    """Apply Cubic Delta Kernel psi_3(u) smoothing to discrete wave heights.
+
+    Parameters
+    ----------
+    h_s : Sequence[float] | float
+        Observed wave heights or single wave height.
+    bandwidth_hours : float
+        Smoothing window bandwidth.
+    delta : float
+        Scale parameter delta.
+
+    Returns
+    -------
+    float
+        Smoothed significant wave height.
+    """
+    if isinstance(h_s, (int, float)):
+        return float(h_s)
+    if not h_s:
+        return 0.0
+    time_hours = list(range(len(h_s)))
+    return smooth_wave_heights_cubic_delta(
+        timestamps_hours=time_hours,
+        wave_heights=h_s,
+        bandwidth_hours=bandwidth_hours,
+        delta=delta,
+    )
+
+
+def fetch_wave_heights(
+    corridor_id: Optional[str] = None,
+    force_circuit_breaker: bool = False,
+    config: Optional[dict[str, Any]] = None,
+    config_dir: Optional[Path | str] = None,
+    db_connection: Optional[Any] = None,
+) -> tuple[float, str]:
+    """Convenience function returning (wave_height_m, metadata_tag) tuple."""
+    adapter = OpenMeteoHydroAdapter(
+        config=config,
+        config_dir=config_dir,
+        db_connection=db_connection,
+    )
+    return adapter.fetch_wave_heights(
+        corridor_id=corridor_id,
+        force_circuit_breaker=force_circuit_breaker,
+    )
+
 
 __all__ = [
     "OpenMeteoHydroResult",
     "OpenMeteoHydroAdapter",
     "cubic_delta_kernel",
     "smooth_wave_heights_cubic_delta",
+    "smooth_cubic_delta",
+    "fetch_wave_heights",
     "load_external_feeds_config",
 ]
