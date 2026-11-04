@@ -10,7 +10,7 @@ This document and the underlying risk model outputs are generated strictly for a
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
 - **Operational State**: `UNDERWAY`
 - **Regime Multiplier**: `1.4688x`
-- **Audit Timestamp**: `2026-11-04 07:11:31 UTC`
+- **Audit Timestamp**: `2026-11-04 22:51:01 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
@@ -156,8 +156,8 @@ Evaluates kinetic hazard suppression and Expected Shortfall (CVaR_99) reduction 
 | **Lone Underway AP Rate** | **`10.53 bps`** | Fair AP for unescorted fairway voyage (`$89,498.45 USD`) |
 | **Escorted Underway AP Rate** | **`3.16 bps`** | Fair AP with dedicated naval escort bubble (`$26,889.52 USD`) |
 | **Gross AP Premium Savings** | **`$62,608.93 USD`** | Direct insurance premium discount achieved via escort |
-| **Escort Deployment OPEX** | **`$129,500.00 USD`** | Charterparty security cost at $18,500/day |
-| **Net Tactical Arbitrage Dividend** | **`$-66,891.07 USD`** | AVOIDED OPEX (Threat benign/suppressed) |
+| **Escort Deployment OPEX** | **`$175,000.00 USD`** | Charterparty security cost at $25,000/day |
+| **Net Tactical Arbitrage Dividend** | **`$-112,391.07 USD`** | AVOIDED OPEX (Threat benign/suppressed) |
 | **Expected Shortfall (CVaR_99) Reduction** | **`$42,627.36 USD`** | Conditional tail risk (CVaR_99) exposure reduction |
 
 #### Table 4E: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State

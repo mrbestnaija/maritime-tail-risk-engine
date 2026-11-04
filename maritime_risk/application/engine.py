@@ -363,7 +363,7 @@ class CorridorAuditResult:
                 f"| **Lone Underway AP Rate** | **`{self.jwc_result.ap_lone_bps:.2f} bps`** | Fair AP for unescorted fairway voyage (`${self.jwc_result.ap_lone_usd:,.2f} USD`) |",
                 f"| **Escorted Underway AP Rate** | **`{self.jwc_result.ap_escorted_bps:.2f} bps`** | Fair AP with dedicated naval escort bubble (`${self.jwc_result.ap_escorted_usd:,.2f} USD`) |",
                 f"| **Gross AP Premium Savings** | **`${self.jwc_result.delta_ap_usd:,.2f} USD`** | Direct insurance premium discount achieved via escort |",
-                f"| **Escort Deployment OPEX** | **`${self.jwc_result.escort_opex_cost_usd:,.2f} USD`** | Charterparty security cost at ${self.vessel_spec.daily_escort_cost_usd:,.0f}/day |",
+                f"| **Escort Deployment OPEX** | **`${self.jwc_result.escort_opex_cost_usd:,.2f} USD`** | Charterparty security cost at ${self.jwc_result.escort_opex_cost_usd / max(getattr(self.hyperparams.cox, 'voyage_window_days', 7.0), 1.0):,.0f}/day |",
                 f"| **Net Tactical Arbitrage Dividend** | **`${self.jwc_result.dividend_net_usd:+,.2f} USD`** | {'PROFITABLE (Escort pays for itself)' if self.jwc_result.dividend_net_usd > 0 else 'AVOIDED OPEX (Threat benign/suppressed)'} |",
                 f"| **Expected Shortfall (CVaR_99) Reduction** | **`${self.jwc_result.delta_reserve_usd:,.2f} USD`** | Conditional tail risk (CVaR_99) exposure reduction |",
                 "",

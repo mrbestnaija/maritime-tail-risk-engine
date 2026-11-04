@@ -1,0 +1,48 @@
+{
+  "open_meteo": {
+    "api_endpoint": "https://marine-api.open-meteo.com/v1/marine",
+    "api_version": "v1",
+    "timeout_seconds": 5.0,
+    "hourly_variables": [
+      "wave_height",
+      "wave_period"
+    ],
+    "default_corridor_id": "GOG_BONNY_BRASS_FAIRWAY",
+    "bounding_boxes": {
+      "GOG_BONNY_BRASS_FAIRWAY": {
+        "latitude_min": 4.0,
+        "latitude_max": 4.5,
+        "longitude_min": 6.5,
+        "longitude_max": 7.5,
+        "centroid_lat": 4.25,
+        "centroid_lon": 7.0
+      },
+      "GOG_ESCRAVOS_FORCADOS_APPROACH": {
+        "latitude_min": 5.1,
+        "latitude_max": 5.8,
+        "longitude_min": 4.8,
+        "longitude_max": 5.5,
+        "centroid_lat": 5.45,
+        "centroid_lon": 5.15
+      },
+      "GOG_LAGOS_SAA_ANCHORAGE": {
+        "latitude_min": 6.0,
+        "latitude_max": 6.45,
+        "longitude_min": 3.1,
+        "longitude_max": 3.6,
+        "centroid_lat": 6.22,
+        "centroid_lon": 3.35
+      }
+    },
+    "circuit_breaker": {
+      "timeout_seconds": 5.0,
+      "fallback_historical_percentile": 90.0,
+      "default_fallback_wave_height_m": 2.15,
+      "fallback_tag": "[ESTIMATED_HYDRODYNAMICS]"
+    },
+    "cubic_delta_kernel": {
+      "bandwidth_hours": 3.0,
+      "smoothing_parameter_delta": 1.0
+    }
+  }
+}
