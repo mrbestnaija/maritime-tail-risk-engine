@@ -25,5 +25,5 @@ During `RED_ESCALATION_BREACH` regimes, static Joint War Committee benchmarks (1
 
 ---
 
-**Researcher**: Bestman Ezekwu (Nigerian Navy officer with 20+ years of operational experience)  
+**Researcher**: Bestman Ezekwu (Maritime domain researcher with 20+ years of operational experience)  
 **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273) | **LinkedIn**: [https://www.linkedin.com/in/bestman-ezekwu/](https://www.linkedin.com/in/bestman-ezekwu/)

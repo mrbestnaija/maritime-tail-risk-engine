@@ -2,7 +2,7 @@
 ## Maritime War-Risk Underwriting, Tail-Risk Actuarial Engineering & Domain Intelligence
 
 **Author**: Bestman Ezekwu  
-**Credentials**: Nigerian Navy officer with 20+ years of operational experience  
+**Credentials**: Maritime domain researcher with 20+ years of operational experience  
 **ORCID**: [0009-0008-0112-9273](https://orcid.org/0009-0008-0112-9273)  
 **Profile**: [LinkedIn](https://www.linkedin.com/in/bestman-ezekwu/) | [GitHub @mrbestnaija](https://github.com/mrbestnaija/maritime-tail-risk-engine)  
 **Research Capacity**: Independent academic and open-source quantitative research conducted in a personal capacity. Zero reliance on restricted military or classified C2 infrastructure; 100% compliant with public civilian OSINT data standards.

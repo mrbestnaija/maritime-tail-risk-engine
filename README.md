@@ -31,7 +31,7 @@ Operating canonically over the **Gulf of Guinea (GoG) - Bonny & Brass Fairway (`
 ## Civilian MDA Hard Firewall
 
 > [!IMPORTANT]
-> **Strict Legal & Regulatory Invariant**: This repository is an independent academic and commercial quantitative research project. It **strictly utilizes 100% public civilian satellite and meteorological telemetry** and **NEVER** models, ingests, or references restricted military or naval Command & Control (C2) systems (e.g., Falcon Eye, RMAC).
+> **Strict Legal & Regulatory Invariant**: This repository is an independent academic and commercial quantitative research project. It **strictly utilizes 100% public civilian satellite and meteorological telemetry** and **NEVER** models, ingests, or references restricted military Command & Control (C2) systems (e.g., Falcon Eye, RMAC).
 
 The corridor risk picture is enriched exclusively through 4 verified civilian equivalents:
 - **Marine MetOcean Envelope**: Copernicus Marine Service (CMEMS) / ECMWF ERA5 (`COPERNICUS_ERA5_METOCEAN`) for Significant Wave Height ($H_s$).
@@ -187,7 +187,7 @@ For immediate commercial deployment and academic publication:
 
 ## Author Attribution
 
-- **Author**: Nigerian Navy officer with 20+ years of operational experience
+- **Author**: Maritime domain researcher with 20+ years of operational experience
 - **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273)
 
 ---

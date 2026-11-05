@@ -64,7 +64,7 @@ When multiple intelligence agencies report the same incident (e.g. MDAT-GOG, IMB
 
 ### 2. Multi-Sensor Civilian OSINT & Hydrodynamic Physics Fusion
 
-The corridor risk picture is enriched using **4 verifiable public civilian satellite & meteorological sensors** alongside hydrodynamic small-skiff boarding physics (Hard Firewall: Zero military or restricted naval C2 feeds):
+The corridor risk picture is enriched using **4 verifiable public civilian satellite & meteorological sensors** alongside hydrodynamic small-skiff boarding physics (Hard Firewall: Zero military or restricted defense C2 feeds):
 
 | Civilian Sensor Channel | Data Provider Equivalent | Physical Hazard Metric | Corridor Observed Mean [Min, Max] |
 |---|---|---|---|
@@ -164,12 +164,12 @@ Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$):
 This document and the underlying risk model outputs are generated strictly for academic, underwriting research, and quantitative risk evaluation purposes based exclusively on publicly available Open Source Intelligence (OSINT) maritime security data. This report does not constitute official nautical advice, security operational clearance, or guaranteed insurance pricing. Neither the authors nor the operators of the maritime-tail-risk-engine assume liability for maritime navigation, chartering decisions, or asset deployment in war risk or high-risk areas (HRA).
 
 > [!IMPORTANT]
-> **Civilian Open-Source Intelligence (OSINT) Certification**: This intelligence and model suite strictly utilizes 100% verified civilian open-source feeds (Copernicus ERA5, GFW Sentinel-1 SAR radar, IMF PortWatch AIS, NOAA VIIRS Nightfire) and zero restricted military or naval C2 feeds.
+> **Civilian Open-Source Intelligence (OSINT) Certification**: This intelligence and model suite strictly utilizes 100% verified civilian open-source feeds (Copernicus ERA5, GFW Sentinel-1 SAR radar, IMF PortWatch AIS, NOAA VIIRS Nightfire) and zero restricted military or defense C2 feeds.
 
 #### Author Identity Block
 - **Author**: **Bestman Ezekwu Enock**
 - **Role**: Quantitative Risk Architect & Maritime Tail Risk Lead
-- **Designation / Background**: Nigerian Navy officer with 20+ years of operational experience
+- **Designation / Background**: Maritime domain researcher with 20+ years of operational experience
 - **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)
 - **ORCID**: `0009-0008-0112-9273`
 - **LinkedIn**: [Bestman Ezekwu Enock](https://www.linkedin.com/in/bestman-ezekwu/)

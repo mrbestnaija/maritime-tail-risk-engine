@@ -6,7 +6,7 @@ If you utilize `maritime-tail-risk-engine`, its bi-temporal reporting-lag formul
 
 ## 1. Verified Identity & Researcher Metadata
 
-- **Author**: Nigerian Navy officer with 20+ years of operational experience
+- **Author**: Maritime domain researcher with 20+ years of operational experience
 - **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273)
 - **Repository**: [`https://github.com/mrbestnaija/maritime-tail-risk-engine`](https://github.com/mrbestnaija/maritime-tail-risk-engine)
 
@@ -17,7 +17,7 @@ If you utilize `maritime-tail-risk-engine`, its bi-temporal reporting-lag formul
 ### BibTeX
 ```bibtex
 @software{maritime2026engine,
-  author       = {{Nigerian Navy officer with 20+ years of operational experience}},
+  author       = {{Maritime domain researcher with 20+ years of operational experience}},
   title        = {{maritime-tail-risk-engine: Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways}},
   month        = nov,
   year         = 2026,
@@ -28,7 +28,7 @@ If you utilize `maritime-tail-risk-engine`, its bi-temporal reporting-lag formul
 }
 
 @article{maritime2026bitemporal,
-  author       = {{Nigerian Navy officer with 20+ years of operational experience}},
+  author       = {{Maritime domain researcher with 20+ years of operational experience}},
   title        = {{Bi-Temporal Reporting Latency, Multi-Sensor Union Envelopes, and Hydrodynamic-MSSA Tail Decomposition in Maritime Conflict Early-Warning Systems: Evidence from the Gulf of Guinea}},
   journal      = {SSRN / arXiv Working Paper Series},
   year         = 2026,
@@ -38,15 +38,15 @@ If you utilize `maritime-tail-risk-engine`, its bi-temporal reporting-lag formul
 ```
 
 ### APA 7th Edition
-> Nigerian Navy officer with 20+ years of operational experience. (2026). *maritime-tail-risk-engine: Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways* (Version 0.3.1) [Computer software]. GitHub. https://github.com/mrbestnaija/maritime-tail-risk-engine. ORCID: 0009-0008-0112-9273.
+> Maritime domain researcher with 20+ years of operational experience. (2026). *maritime-tail-risk-engine: Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways* (Version 0.3.1) [Computer software]. GitHub. https://github.com/mrbestnaija/maritime-tail-risk-engine. ORCID: 0009-0008-0112-9273.
 
 ### IEEE Style
-> Nigerian Navy officer with 20+ years of operational experience, "maritime-tail-risk-engine: Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways," version 0.3.1, Nov. 2026. [Online]. Available: https://github.com/mrbestnaija/maritime-tail-risk-engine. ORCID: 0009-0008-0112-9273.
+> Maritime domain researcher with 20+ years of operational experience, "maritime-tail-risk-engine: Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways," version 0.3.1, Nov. 2026. [Online]. Available: https://github.com/mrbestnaija/maritime-tail-risk-engine. ORCID: 0009-0008-0112-9273.
 
 ### RIS Format (for EndNote, Zotero, Mendeley)
 ```ris
 TY  - COMP
-AU  - Nigerian Navy officer with 20+ years of operational experience
+AU  - Maritime domain researcher with 20+ years of operational experience
 TI  - maritime-tail-risk-engine: Rigorous, public-OSINT-only, bi-temporal quantification of reporting-lag distortion for West African littoral fairways
 PY  - 2026
 VL  - 0.3.1

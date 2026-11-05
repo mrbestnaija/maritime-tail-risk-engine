@@ -121,7 +121,7 @@ During `{anomaly_data['sprt_watch_state']}` regimes, static Joint War Committee 
 
 ---
 
-**Author**: Nigerian Navy officer with 20+ years of operational experience  
+**Author**: Maritime domain researcher with 20+ years of operational experience  
 **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273)
 """
 

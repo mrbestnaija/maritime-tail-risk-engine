@@ -16,7 +16,7 @@ This document and the underlying risk model outputs are generated strictly for a
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
 - **Operational State**: `UNDERWAY`
 - **Regime Multiplier**: `1.4688x`
-- **Audit Timestamp**: `2026-11-05 20:29:26 UTC`
+- **Audit Timestamp**: `2026-11-05 21:51:06 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
@@ -72,7 +72,7 @@ When multiple intelligence agencies report the same incident (e.g. MDAT-GOG, IMB
 
 ### 2. Multi-Sensor Civilian OSINT & Hydrodynamic Physics Fusion
 
-The corridor risk picture is enriched using **4 verifiable public civilian satellite & meteorological sensors** alongside hydrodynamic small-skiff boarding physics (Hard Firewall: Zero military or restricted naval C2 feeds):
+The corridor risk picture is enriched using **4 verifiable public civilian satellite & meteorological sensors** alongside hydrodynamic small-skiff boarding physics (Hard Firewall: Zero military or restricted defense C2 feeds):
 
 | Civilian Sensor Channel | Data Provider Equivalent | Physical Hazard Metric | Corridor Observed Mean [Min, Max] |
 |---|---|---|---|
@@ -160,7 +160,7 @@ Evaluates kinetic hazard suppression and Expected Shortfall (CVaR_99) reduction 
 | Arbitrage / Dividend Metric | Value | Forensic / Operational Significance |
 |---|---|---|
 | **Lone Underway AP Rate** | **`10.53 bps`** | Fair AP for unescorted fairway voyage (`$89,498.45 USD`) |
-| **Escorted Underway AP Rate** | **`3.16 bps`** | Fair AP with dedicated naval escort bubble (`$26,889.52 USD`) |
+| **Escorted Underway AP Rate** | **`3.16 bps`** | Fair AP with dedicated security escort bubble (`$26,889.52 USD`) |
 | **Gross AP Premium Savings** | **`$62,608.93 USD`** | Direct insurance premium discount achieved via escort |
 | **Escort Deployment OPEX** | **`$175,000.00 USD`** | Charterparty security cost at $25,000/day |
 | **Net Tactical Arbitrage Dividend** | **`$-112,391.07 USD`** | AVOIDED OPEX (Threat benign/suppressed) |
@@ -184,10 +184,10 @@ Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$):
 This document and the underlying risk model outputs are generated strictly for academic, underwriting research, and quantitative risk evaluation purposes based exclusively on publicly available Open Source Intelligence (OSINT) maritime security data. This report does not constitute official nautical advice, security operational clearance, or guaranteed insurance pricing. Neither the authors nor the operators of the maritime-tail-risk-engine assume liability for maritime navigation, chartering decisions, or asset deployment in war risk or high-risk areas (HRA).
 
 > [!IMPORTANT]
-> **Civilian Open-Source Intelligence (OSINT) Certification**: This intelligence and model suite strictly utilizes 100% verified civilian open-source feeds (Copernicus ERA5, GFW Sentinel-1 SAR radar, IMF PortWatch AIS, NOAA VIIRS Nightfire) and zero restricted military or naval C2 feeds.
+> **Civilian Open-Source Intelligence (OSINT) Certification**: This intelligence and model suite strictly utilizes 100% verified civilian open-source feeds (Copernicus ERA5, GFW Sentinel-1 SAR radar, IMF PortWatch AIS, NOAA VIIRS Nightfire) and zero restricted military or defense C2 feeds.
 
 #### Author Identity Block
-- **Author**: Nigerian Navy officer with 20+ years of operational experience
+- **Author**: Maritime domain researcher with 20+ years of operational experience
 - **ORCID**: `0009-0008-0112-9273`
 
 ---

@@ -6,7 +6,7 @@ Integrates Live OSINT & Environmental REST adapters:
 3. Evaluates corridor risk profile via MaritimeRiskEngine with live smoothed significant wave height (Hs).
 4. Appends circuit breaker status tags and emits reproducible Markdown tear sheet & JSON audit manifest.
 
-Author: Nigerian Navy officer with 20+ years of operational experience
+Author: Maritime domain researcher with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
 """
 

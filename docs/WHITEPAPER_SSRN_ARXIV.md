@@ -2,7 +2,7 @@
 
 **Bestman Ezekwu Enock**  
 *Lead Quantitative Risk Architect*  
-Nigerian Navy officer with 20+ years of operational experience  
+Maritime domain researcher with 20+ years of operational experience  
 M.Sc. Maritime Security & Warfare | M.A. Peace & Conflict Studies | MITx MicroMasters in Statistics & Data Science  
 Abuja, Nigeria  
 **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273) | **LinkedIn**: [Bestman Ezekwu Enock](https://www.linkedin.com/in/bestman-ezekwu/) | **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)  
@@ -31,7 +31,7 @@ Commercial maritime transit through designated High-Risk Areas (HRA) and Joint W
 
 Underwriters traditionally quote 7-day Additional Premium (AP) ratings as static basis-point (bps) loadings on Hull & Machinery (H&M) agreed valuations. However, standard actuarial and algorithmic early-warning tools in this theater suffer from three fatal mathematical vulnerabilities:
 
-1. **The Reporting-Lag Blind-Spot**: Incidents reported by civilian or naval coordination centers are cataloged by their *publication date* ($t_{\text{pub}}$) rather than their true *physical occurrence date* ($t_{\text{event}}$). In an active piracy surge, an underwriter assessing risk on day $t$ using the latest published bulletin is blind to attacks that occurred on days $t-1, \dots, t-7$, underestimating rolling Value at Risk by more than one-third.
+1. **The Reporting-Lag Blind-Spot**: Incidents reported by civilian or regional maritime coordination centers are cataloged by their *publication date* ($t_{\text{pub}}$) rather than their true *physical occurrence date* ($t_{\text{event}}$). In an active piracy surge, an underwriter assessing risk on day $t$ using the latest published bulletin is blind to attacks that occurred on days $t-1, \dots, t-7$, underestimating rolling Value at Risk by more than one-third.
 2. **Divergent Agency Telemetry & Tail Clipping**: Independent reporting entities evaluate the same boarding event with asymmetric severity scores. Taking naive averages or retaining only the primary reporting agency systematically truncates upper-tail severity bounds, violating actuarial tail risk integrity under Lloyd's Syndicate Standards.
 3. **Environmental Conflation**: Pirate skiffs (fast wooden or fiberglass skiffs propelled by twin $200\text{ hp}$ outboards) cannot operate effectively in elevated seas ($H_s > 1.85\text{m}$). Without isolating physical sea-state harmonics from intentional hostile intent, algorithms issue false alarms during calm weather and miss attacks during unexpected seasonal lulls.
 
@@ -184,7 +184,7 @@ The architecture is implemented as a pure Python 3.10+ package with zero externa
 
 ## 5. Non-Conflict & Personal Research Declaration
 
-This paper represents independent academic and quantitative research conducted by **Bestman Ezekwu Enock** (Nigerian Navy officer with 20+ years of operational experience) in a personal capacity. This study relies exclusively on verifiable public civilian open-source intelligence (OSINT). It does not ingest, utilize, or reference restricted military operational communications or classified Command & Control (C2) systems.
+This paper represents independent academic and quantitative research conducted by **Bestman Ezekwu Enock** (Maritime domain researcher with 20+ years of operational experience) in a personal capacity. This study relies exclusively on verifiable public civilian open-source intelligence (OSINT). It does not ingest, utilize, or reference restricted military operational communications or classified Command & Control (C2) systems.
 
 ---
 

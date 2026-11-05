@@ -141,7 +141,7 @@ class AuditManifestBuilder:
                 },
             },
             "author_block": {
-                "author": "Nigerian Navy officer with 20+ years of operational experience",
+                "author": "Maritime domain researcher with 20+ years of operational experience",
                 "orcid": "0009-0008-0112-9273",
             },
         }

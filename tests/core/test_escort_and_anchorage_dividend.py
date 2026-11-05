@@ -1,11 +1,11 @@
 """Deterministic Verification Suite for Tactical Hardening Arbitrage.
 
-Phase 2 Actuarial & Naval Operational Invariants:
+Phase 2 Actuarial & Escort Operational Invariants:
 1. Kinetic Suppression Ordering:
    UNDERWAY_LONE > AT_ANCHOR_UNPROTECTED > UNDERWAY_ESCORTED > AT_ANCHOR_SECURED.
 2. Positive Arbitrage:
    In elevated threat regimes (high MLI, high port wait), dividend_net_usd > 0
-   (naval escort pays for itself via gross AP savings > escort OPEX).
+   (security escort pays for itself via gross AP savings > escort OPEX).
 3. Monsoonal Swamping (Avoided Security Waste):
    When H_s > 1.85m (Sea State 6), small-skiff boarding feasibility decays exponentially,
    yielding dividend_net_usd < 0 (hiring escorts in heavy seas is wasted OPEX).

@@ -7,7 +7,7 @@ Allows manual execution and verification of:
 4. Enforcing SQLite C-engine CHECK constraints (pub_time >= event_time).
 5. Engaging fallback circuit breaker on upstream failure.
 
-Author: Nigerian Navy officer with 20+ years of operational experience
+Author: Maritime domain researcher with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
 """
 

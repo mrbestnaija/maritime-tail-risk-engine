@@ -1,11 +1,11 @@
 # Security Policy & Forensic Audit Controls
 
 ## Scope & Legal Boundaries (100% Public Civilian OSINT Hard Firewall)
-The `maritime-tail-risk-engine` processes strictly Open Source Intelligence (OSINT) maritime security data. It operates with zero classified, proprietary naval, or private commercial tracking inputs.
-Under no circumstances does this repository reference, model, or ingest restricted military/naval Command & Control (C2) systems (such as Falcon Eye or RMAC).
+The `maritime-tail-risk-engine` processes strictly Open Source Intelligence (OSINT) maritime security data. It operates with zero classified, proprietary, or private commercial tracking inputs.
+Under no circumstances does this repository reference, model, or ingest restricted military Command & Control (C2) systems (such as Falcon Eye or RMAC).
 
 ## Personal Capacity & Non-Conflict Declaration
-This project is an independent personal academic and quantitative research initiative created by a Nigerian Navy officer with 20+ years of operational experience. It is conducted strictly in a personal capacity using exclusively verifiable public civilian open-source intelligence (OSINT). It is entirely separate from and unconnected to official service duties, naval operations, or classified service communications. All code, datasets, and documentation are public civilian scientific artifacts published under the open-source MIT License.
+This project is an independent personal academic and quantitative research initiative created by a Maritime domain researcher with 20+ years of operational experience. It is conducted strictly in a personal capacity using exclusively verifiable public civilian open-source intelligence (OSINT). It is entirely separate from and unconnected to official duties, government operations, or classified communications. All code, datasets, and documentation are public civilian scientific artifacts published under the open-source MIT License.
 
 The fairway corridor picture is enriched exclusively through 4 verifiable public civilian satellite and meteorological sensor feeds:
 1. **Spaceborne SAR Dark-Vessel Ratio**: Global Fishing Watch (GFW) / ESA Copernicus Sentinel-1 public radar vessel detections (`GFW_SENTINEL1_SAR`).

@@ -3,7 +3,7 @@
 **Fund**: Lacuna Fund (Geospatial / Climate / Environment in Sub-Saharan Africa)  
 **Project Title**: *Gulf of Guinea Maritime Domain Commons: Open, Bias-Corrected MetOcean & Satellite Telemetry Benchmarks for Commercial Risk Equity*  
 **Requested Funding**: **$30,000 USD**  
-**Principal Investigator**: **Bestman Ezekwu Enock** (Nigerian Navy officer with 20+ years of operational experience)  
+**Principal Investigator**: **Bestman Ezekwu Enock** (Maritime domain researcher with 20+ years of operational experience)  
 **Location**: Abuja, Nigeria  
 **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273) | **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)  
 **Target Repository**: [`https://github.com/mrbestnaija/maritime-tail-risk-engine`](https://github.com/mrbestnaija/maritime-tail-risk-engine)  

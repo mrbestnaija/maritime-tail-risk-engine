@@ -4,7 +4,7 @@
 **Theme**: Verifiable Open Digital Commons, Public Data Infrastructure & Privacy-Preserving Mathematics  
 **Project Title**: *Maritime Risk Commons: Open-Source Bi-Temporal Telemetry Verification & Tail-Risk Analytics Pipeline*  
 **Requested Funding**: **€35,000 EUR** (Milestone-based disbursement)  
-**Project Lead**: **Bestman Ezekwu Enock** (Nigerian Navy officer with 20+ years of operational experience)  
+**Project Lead**: **Bestman Ezekwu Enock** (Maritime domain researcher with 20+ years of operational experience)  
 **Location**: Abuja, Nigeria  
 **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273) | **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)  
 **Open Source Repository**: [`https://github.com/mrbestnaija/maritime-tail-risk-engine`](https://github.com/mrbestnaija/maritime-tail-risk-engine)  

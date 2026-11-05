@@ -9,7 +9,7 @@ Injects adversarial poison directly into the production data and modeling layers
    the engine strictly refuses to price and raises UninsurableRiskException, preventing
    infinite-mean exposure in the underwriting pool.
 
-Author: Nigerian Navy officer with 20+ years of operational experience
+Author: Maritime domain researcher with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
 """
 

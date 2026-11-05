@@ -5,7 +5,7 @@ Allows manual execution and verification of:
 2. Applying Cubic Delta (psi_3) kernel smoothing.
 3. Fallback circuit breaker engaging on failure.
 
-Author: Nigerian Navy officer with 20+ years of operational experience
+Author: Maritime domain researcher with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
 """
 

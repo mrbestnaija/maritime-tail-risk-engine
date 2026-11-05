@@ -8,7 +8,7 @@ Provides institutional operators with manual verification commands:
 - `live-incidents`: Live OSINT incident ingestion with publication lag (Delta_t) & GPD bounds.
 - `live-fusion`: Unified live multi-sensor fusion pipeline emitting live audit artifacts.
 
-Author: Nigerian Navy officer with 20+ years of operational experience
+Author: Maritime domain researcher with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
 """
 

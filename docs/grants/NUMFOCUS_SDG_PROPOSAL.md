@@ -4,7 +4,7 @@
 **Program**: Small Development Grants (SDG)  
 **Project Title**: *Packaging `maritime_risk`: Production-Grade Scientific Python Packaging, Property Fuzzing & Open Documentation*  
 **Requested Amount**: **$10,000 USD**  
-**Principal Investigator**: **Bestman Ezekwu Enock** (Nigerian Navy officer with 20+ years of operational experience)  
+**Principal Investigator**: **Bestman Ezekwu Enock** (Maritime domain researcher with 20+ years of operational experience)  
 **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273) | **GitHub**: [`@mrbestnaija`](https://github.com/mrbestnaija)  
 **Target Package**: [`maritime-tail-risk-engine` (`maritime_risk`)](https://github.com/mrbestnaija/maritime-tail-risk-engine)  
 **Upstream Scientific Ecosystem**: NumPy, SciPy, Pydantic, Hypothesis, pytest

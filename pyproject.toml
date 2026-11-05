@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "Nigerian Navy officer with 20+ years of operational experience" }
+    { name = "Maritime domain researcher with 20+ years of operational experience" }
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

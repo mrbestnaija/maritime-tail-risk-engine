@@ -7,17 +7,17 @@ These rules codify verified professional, legal, and mathematical constraints de
 
 ---
 
-## 1. Professional Identity & Active-Duty Language Protection
+## 1. Professional Identity & Operational Experience Language Protection
 
-### Rule 1.1 — Active-Duty Phrasing Invariant (Non-Negotiable)
-- **Problem**: Ambiguous or inaccurate designations (e.g., "veteran") jeopardize active-service compliance, career safety, and institutional clarity.
+### Rule 1.1 — Operational Experience Phrasing Invariant (Non-Negotiable)
+- **Problem**: Ambiguous or inaccurate designations (e.g., "veteran") jeopardize compliance, career safety, and institutional clarity.
 - **Enforcement**: All references to "veteran" are permanently banned from this repository. The exact, authoritative formulation must be used across all bios, manifests, documentation, whitepapers, and commit logs:
-  $$\text{"Nigerian Navy officer with 20+ years of operational experience"}$$
+  $$\text{"Maritime domain researcher with 20+ years of operational experience"}$$
 
 ### Rule 1.2 — Single Immutable Source of Truth for Identity
 - **Problem**: Discrepant author names, ORCIDs, or URLs across files undermine academic credibility, peer review, and bibliographic indexing.
 - **Enforcement**: Every document, schema, and manifest must bind to the following verified credentials:
-  - **Author Identity**: Nigerian Navy officer with 20+ years of operational experience
+  - **Author Identity**: Maritime domain researcher with 20+ years of operational experience
   - **ORCID**: [`0009-0008-0112-9273`](https://orcid.org/0009-0008-0112-9273)
   - **Legacy Terminology Ban**: All personal names, personal email addresses, personal URLs, commercial titles (e.g., "Lead Quantitative Risk Architect"), academic degree strings, and prohibited service terms ("veteran") are strictly banned.
 
@@ -27,7 +27,7 @@ These rules codify verified professional, legal, and mathematical constraints de
 
 ### Rule 2.1 — Independent Personal Academic Research Capacity
 - All work in this repository is conducted strictly in an **independent personal academic research capacity**.
-- The repository does not represent official naval policy, strategy, or endorsements of any governmental entity.
+- The repository does not represent official policy, strategy, or endorsements of any governmental entity.
 
 ### Rule 2.2 — 100% Public Civilian OSINT Only (Hard Firewall)
 - Ingestion pipelines must exclusively ingest public, civilian-accessible telemetry and meteorological feeds:
@@ -35,7 +35,7 @@ These rules codify verified professional, legal, and mathematical constraints de
   - Global Fishing Watch (GFW) Sentinel-1 SAR public vessel detections
   - IMF PortWatch maritime corridor trade chokepoints
   - NOAA VIIRS Nightfire offshore flaring / optical observations
-- **Zero Military C2 Coupling**: Under zero circumstances may this codebase ingest, interface with, simulate, or reference restricted military or naval Command & Control (C2) systems (e.g., Falcon Eye, RMAC).
+- **Zero Military C2 Coupling**: Under zero circumstances may this codebase ingest, interface with, simulate, or reference restricted military Command & Control (C2) systems (e.g., Falcon Eye, RMAC).
 
 ### Rule 2.3 — Stated Value Proposition Binding
 - The repository's authoritative value proposition is strictly codified as:

@@ -7,7 +7,7 @@ Verifies:
 4. Automatic circuit breaker tripping on network failure/timeout returning ([], "[ESTIMATED_INCIDENTS]").
 5. End-to-end IncidentFeedAdapter integration on real in-memory SQLite database.
 
-Author: Nigerian Navy officer with 20+ years of operational experience
+Author: Maritime domain researcher with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
 """
 

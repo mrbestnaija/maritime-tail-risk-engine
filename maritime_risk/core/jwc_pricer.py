@@ -384,7 +384,7 @@ def compute_tactical_hardening_dividend(
 ) -> dict[str, float]:
     """Calculate the Escort & Anchorage Tactical Hardening Arbitrage.
 
-    Evaluates the financial savings and Expected Shortfall (CVaR_99) reduction of naval/armed escort:
+    Evaluates the financial savings and Expected Shortfall (CVaR_99) reduction of security/armed escort:
     1. delta_ap_usd = ap_lone_usd - ap_escorted_usd (Gross AP Savings)
     2. dividend_net_usd = delta_ap_usd - (voyage_window_days * daily_escort_cost_usd) (Net Arbitrage)
     3. delta_reserve_usd = (p_breach_lone - p_breach_escorted) * composite_cvar_99_usd (Expected Shortfall / CVaR_99 Reduction)

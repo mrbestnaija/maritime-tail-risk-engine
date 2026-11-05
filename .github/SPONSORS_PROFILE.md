@@ -1,13 +1,13 @@
 # GitHub Sponsors Profile Configuration & Research Sustainability Blueprint
 
-This document specifies the exact profile configuration, active-duty designation, and calibrated sponsorship tiers for **Bestman Ezekwu Enock** (`@mrbestnaija`).
+This document specifies the exact profile configuration, professional designation, and calibrated sponsorship tiers for **Bestman Ezekwu Enock** (`@mrbestnaija`).
 
 ---
 
 ## 1. Verified Bio (GitHub Sponsors Profile)
 
 ```text
-Bestman Ezekwu Enock — Nigerian Navy officer with 20+ years of operational experience.
+Bestman Ezekwu Enock — Maritime domain researcher with 20+ years of operational experience.
 Lead Architect of maritime-tail-risk-engine (open-source bi-temporal OSINT fusion, MSSA decomposition, and extreme value POT-GPD tail risk analytics).
 Conducting independent academic and quantitative research using 100% public civilian satellite and metocean telemetry.
 ```
@@ -38,4 +38,4 @@ Higher-tier institutional retainers have been deliberately shelved until multipl
 
 - **Independent Capacity**: All research, code development, and OSINT analysis are conducted by Bestman Ezekwu Enock strictly in a personal, academic capacity.
 - **100% Public Civilian OSINT**: This project utilizes exclusively publicly accessible civilian data sources (Copernicus ERA5, Global Fishing Watch Sentinel-1, IMF PortWatch, NOAA VIIRS Nightfire).
-- **Absolute Firewall**: Under no circumstances does this repository reference, ingest, or model classified military operational data, official naval communications, or restricted Command & Control (C2) systems (such as Falcon Eye or RMAC).
+- **Absolute Firewall**: Under no circumstances does this repository reference, ingest, or model classified military operational data, official communications, or restricted Command & Control (C2) systems (such as Falcon Eye or RMAC).

@@ -1,6 +1,6 @@
 """Hypothesis Property-Based Actuarial Stress Testing Suite.
 
-Author: Nigerian Navy officer with 20+ years of operational experience
+Author: Maritime domain researcher with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
 Repository: maritime-tail-risk-engine (Branch main)
 

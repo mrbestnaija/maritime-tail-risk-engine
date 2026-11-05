@@ -8,7 +8,7 @@ Clean Architecture Infrastructure Layer:
 5. Implements an automatic circuit breaker returning ([], "[ESTIMATED_INCIDENTS]") on timeout or failure.
 6. Fully declarative: loads incident_feed_url and parameters from configs/external_feeds.json.
 
-Author: Nigerian Navy officer with 20+ years of operational experience
+Author: Maritime domain researcher with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
 """
 
