@@ -44,7 +44,7 @@ def fetch_and_smooth_hs():
     print(f"[NETWORK] Reaching out to Open-Meteo API...")
     print(f"[NETWORK] Endpoint: {url}")
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "MTRE-Oracle/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "MTRE-Metocean-Adapter/1.0"})
         with urllib.request.urlopen(req, timeout=5.0) as response:
             if response.status != 200:
                 raise Exception(f"HTTP Error {response.status}")

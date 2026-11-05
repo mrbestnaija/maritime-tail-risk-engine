@@ -23,7 +23,7 @@ Operating canonically over the **Gulf of Guinea (GoG) - Bonny & Brass Fairway (`
 3. **Physical Storage Invariants**: Programmatically guarantees causality ($t_{\text{pub}} \ge t_{\text{event}}$) via SQLite C-engine `CHECK` constraints, preventing temporal lookahead leakage during backtesting.
 
 > [!NOTE]
-> **Phase 1 Verified Scope**: This release represents the frozen Phase 1 baseline. All unverified Phase 2+ aspirational features—including live dynamic oracles, statutory reserve claims, and regime-switching multipliers—are halted and excluded from this release.
+> **Phase 1 Verified Scope**: This release represents the frozen Phase 1 baseline. All unverified Phase 2+ aspirational features—including live external pricing feeds, statutory reserve claims, and regime-switching multipliers—are halted and excluded from this release.
 
 
 ---

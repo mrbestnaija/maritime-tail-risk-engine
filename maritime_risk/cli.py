@@ -6,7 +6,7 @@ Provides institutional operators with manual verification commands:
 - `verify`: Quad-gate repository verification (< 10s SLA).
 - `live-meteo`: Live Open-Meteo hydrodynamics ingestion with Cubic Delta (psi_3) kernel.
 - `live-incidents`: Live OSINT incident ingestion with publication lag (Delta_t) & GPD bounds.
-- `live-oracle`: Unified live multi-sensor fusion oracle emitting live audit artifacts.
+- `live-fusion`: Unified live multi-sensor fusion pipeline emitting live audit artifacts.
 
 Author: Nigerian Navy officer with 20+ years of operational experience
 ORCID: 0009-0008-0112-9273
@@ -160,42 +160,42 @@ def main(argv: list[str] | None = None) -> int:
         help="Output raw JSON to stdout",
     )
 
-    # 5. Live Oracle command
-    oracle_parser = subparsers.add_parser(
-        "live-oracle",
-        help="Execute unified live multi-sensor fusion oracle and emit live audit artifacts",
+    # 5. Live Multi-Sensor Fusion command
+    fusion_parser = subparsers.add_parser(
+        "live-fusion",
+        help="Execute unified live multi-sensor fusion pipeline and emit live audit artifacts",
     )
-    oracle_parser.add_argument(
+    fusion_parser.add_argument(
         "--corridor",
         default="GOG_BONNY_BRASS_FAIRWAY",
         help="Corridor identifier (default: GOG_BONNY_BRASS_FAIRWAY)",
     )
-    oracle_parser.add_argument(
+    fusion_parser.add_argument(
         "--vessel",
         default="STANDARD_SUEZMAX_85M",
         help="Vessel profile identifier (default: STANDARD_SUEZMAX_85M)",
     )
-    oracle_parser.add_argument(
+    fusion_parser.add_argument(
         "--config-dir",
         default="configs",
         help="Path to configurations directory (default: configs)",
     )
-    oracle_parser.add_argument(
+    fusion_parser.add_argument(
         "--force-fallback",
         action="store_true",
         help="Force circuit breaker fallback on live adapters",
     )
-    oracle_parser.add_argument(
+    fusion_parser.add_argument(
         "--output-md",
-        default="LIVE_ORACLE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md",
-        help="Output path for live Markdown tearsheet (default: LIVE_ORACLE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md)",
+        default="LIVE_FUSION_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md",
+        help="Output path for live Markdown tearsheet (default: LIVE_FUSION_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md)",
     )
-    oracle_parser.add_argument(
+    fusion_parser.add_argument(
         "--output-manifest",
-        default="LIVE_ORACLE_MANIFEST.json",
-        help="Output path for live JSON audit manifest (default: LIVE_ORACLE_MANIFEST.json)",
+        default="LIVE_FUSION_MANIFEST.json",
+        help="Output path for live JSON audit manifest (default: LIVE_FUSION_MANIFEST.json)",
     )
-    oracle_parser.add_argument(
+    fusion_parser.add_argument(
         "--json",
         action="store_true",
         help="Output raw JSON result to stdout",
@@ -289,7 +289,7 @@ def main(argv: list[str] | None = None) -> int:
                 print("STATUS: DEGRADED [CIRCUIT_BREAKER_ENGAGED]")
         return 0
 
-    elif args.command == "live-oracle":
+    elif args.command == "live-fusion":
         corridor_id = getattr(args, "corridor", "GOG_BONNY_BRASS_FAIRWAY")
         vessel_id = getattr(args, "vessel", "STANDARD_SUEZMAX_85M")
         config_dir = getattr(args, "config_dir", "configs")
@@ -338,7 +338,7 @@ def main(argv: list[str] | None = None) -> int:
             print(result.to_json())
         else:
             print("=" * 64)
-            print("PHASE 3: LIVE MULTI-SENSOR FUSION ORACLE")
+            print("PHASE 3: LIVE MULTI-SENSOR FUSION PIPELINE")
             print("=" * 64)
             print(f"Corridor:            {result.corridor_spec.corridor_id}")
             print(f"Live Metocean Hs:    {hydro_res.wave_height_m:.4f} m ({hydro_res.metadata_tag})")
@@ -349,7 +349,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Tear Sheet Artifact: {output_md.resolve()}")
             print(f"Manifest Artifact:   {output_manifest.resolve()}")
             print("=" * 64)
-            print("STATUS: LIVE ORACLE EVALUATION COMPLETE")
+            print("STATUS: LIVE MULTI-SENSOR FUSION EVALUATION COMPLETE")
         return 0
 
     elif args.command == "audit" or args.command is None:

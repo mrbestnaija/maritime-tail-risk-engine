@@ -33,6 +33,7 @@ def run_phase1_audit(
     manifest_path: Path | None = None,
     corridor_id: str = "GOG_BONNY_BRASS_FAIRWAY",
     vessel_profile_id: str = "STANDARD_SUEZMAX_85M",
+    current_hs: float | None = None,
 ) -> dict[str, Any]:
     """Run full Phase 1, 2B & Phase 3 live audit and emit tear sheet & manifest via MaritimeRiskEngine."""
     root_dir = dataset_path.parent.parent
@@ -96,7 +97,7 @@ def run_phase1_audit(
         telemetry=telemetry_records,
         dataset_sha256=dataset_sha256,
         telemetry_sha256=telemetry_sha256,
-        current_hs=live_hs,
+        current_hs=current_hs,
     )
 
     # 7. Emit PHASE1_AUDIT_MANIFEST.json using AuditManifestBuilder

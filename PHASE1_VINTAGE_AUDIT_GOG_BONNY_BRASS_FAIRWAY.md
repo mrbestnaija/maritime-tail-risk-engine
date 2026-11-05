@@ -16,7 +16,7 @@ This document and the underlying risk model outputs are generated strictly for a
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
 - **Operational State**: `UNDERWAY`
 - **Regime Multiplier**: `1.4688x`
-- **Audit Timestamp**: `2026-11-05 05:53:38 UTC`
+- **Audit Timestamp**: `2026-11-05 06:35:07 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
@@ -76,15 +76,15 @@ The corridor risk picture is enriched using **4 verifiable public civilian satel
 
 | Civilian Sensor Channel | Data Provider Equivalent | Physical Hazard Metric | Corridor Observed Mean [Min, Max] |
 |---|---|---|---|
-| **Marine MetOcean Envelope** | `COPERNICUS_ERA5_METOCEAN` | Significant Wave Height ($H_s$ in meters) | `0.59m` |
+| **Marine MetOcean Envelope** | `COPERNICUS_ERA5_METOCEAN` | Significant Wave Height ($H_s$ in meters) | `1.62m` |
 | **Spaceborne SAR Dark Ratio** | `GFW_SENTINEL1_SAR` | Radar Targets Lacking Public AIS (%) | `25.9%` |
 | **Anchorage Loitering Delay** | `IMF_PORTWATCH_AIS` | Fairway Waiting / Queue Duration (hrs) | `18.5 hrs` |
 | **Offshore Thermal Continuity** | `NOAA_VIIRS_FIRMS` | Terminal Gas-Flaring Continuity Index | `0.84 [0.65, 0.98]` |
 
 #### Hydrodynamic Skiff Swamping Physics
-- **Observed Mean $H_s$**: `0.59m`
-- **Skiff Boarding Feasibility**: **`98.8%`** (logistic transition at $H_0 = 1.85\text{m}$)
-- **Composite Dark Vessel Hazard Score**: **`2.56 / 10.0`**
+- **Observed Mean $H_s$**: `1.62m`
+- **Skiff Boarding Feasibility**: **`69.3%`** (logistic transition at $H_0 = 1.85\text{m}$)
+- **Composite Dark Vessel Hazard Score**: **`1.79 / 10.0`**
 
 > [!NOTE]
 > **Physical Boarding Invariant**: In maritime security fairways, pirate skiff boardings drop to near zero when significant wave height exceeds swamping thresholds. High SAR dark vessel activity coinciding with calm sea-states creates a critical attack window.
@@ -144,27 +144,27 @@ Replaces naive multiplier heuristics with first-principles underwriting loss exp
 | **Macro Regime Multiplier** | **`1.4688x`** | Liquidity friction / port waiting congestion multiplier |
 | **Calibrated 7-Day Corridor Breach Prob** | **`25.0%`** | Probability of corridor risk exceeding baseline in 7d window |
 | **Single-Vessel Transit Exposure Factor** | **`25.0%`** | Spatial-temporal exposure of single transiting vessel |
-| **Hydrodynamic Boarding Modulator** | **`99.4%`** | Modulation from sea-state small-skiff boarding feasibility |
-| **Effective Single-Vessel Breach Prob** | **`6.21%`** | Net single-vessel breach probability over 7-day transit |
+| **Hydrodynamic Boarding Modulator** | **`84.6%`** | Modulation from sea-state small-skiff boarding feasibility |
+| **Effective Single-Vessel Breach Prob** | **`5.29%`** | Net single-vessel breach probability over 7-day transit |
 | **Expected Tail Delay Duration** | **`31.43 days`** | Operational delay days given extreme tail breach |
 | **Tail Demurrage Loss Exposure** | **`$1,414,178.16 USD`** | Financial demurrage loss at $45,000/day charterparty rate |
 | **Catastrophic Boarding Loss Exposure** | **`$12,940,192.28 USD`** | Expected damage/ransom conditional on tail breach |
-| **Expected 7-Day Tail Loss** | **`$1,309,803.58 USD`** | Unconditional actuarial expected loss over 7-day transit |
-| **Fair Actuarial War-Risk AP** | **`154.09 bps`** | Fair additional premium rate (1 bps = 0.01% of hull value) |
+| **Expected 7-Day Tail Loss** | **`$1,115,360.90 USD`** | Unconditional actuarial expected loss over 7-day transit |
+| **Fair Actuarial War-Risk AP** | **`131.22 bps`** | Fair additional premium rate (1 bps = 0.01% of hull value) |
 | **Lloyd's JWC Market Benchmark** | **`15.00 bps`** | Standard commercial market quote for transit |
-| **Underwriter Commercial Spread** | **`+139.09 bps`** | **`$+1,182,303.58 USD`** per transit underpricing hazard |
+| **Underwriter Commercial Spread** | **`+116.22 bps`** | **`$+987,860.90 USD`** per transit underpricing hazard |
 
 #### Table 4D: Tactical Hardening Arbitrage (Escort & Anchorage Risk Dividend)
 Evaluates kinetic hazard suppression and Expected Shortfall (CVaR_99) reduction across operational postures:
 
 | Arbitrage / Dividend Metric | Value | Forensic / Operational Significance |
 |---|---|---|
-| **Lone Underway AP Rate** | **`13.13 bps`** | Fair AP for unescorted fairway voyage (`$111,613.31 USD`) |
-| **Escorted Underway AP Rate** | **`3.95 bps`** | Fair AP with dedicated naval escort bubble (`$33,546.22 USD`) |
-| **Gross AP Premium Savings** | **`$78,067.09 USD`** | Direct insurance premium discount achieved via escort |
+| **Lone Underway AP Rate** | **`10.53 bps`** | Fair AP for unescorted fairway voyage (`$89,498.45 USD`) |
+| **Escorted Underway AP Rate** | **`3.16 bps`** | Fair AP with dedicated naval escort bubble (`$26,889.52 USD`) |
+| **Gross AP Premium Savings** | **`$62,608.93 USD`** | Direct insurance premium discount achieved via escort |
 | **Escort Deployment OPEX** | **`$175,000.00 USD`** | Charterparty security cost at $25,000/day |
-| **Net Tactical Arbitrage Dividend** | **`$-96,932.91 USD`** | AVOIDED OPEX (Threat benign/suppressed) |
-| **Expected Shortfall (CVaR_99) Reduction** | **`$53,152.06 USD`** | Conditional tail risk (CVaR_99) exposure reduction |
+| **Net Tactical Arbitrage Dividend** | **`$-112,391.07 USD`** | AVOIDED OPEX (Threat benign/suppressed) |
+| **Expected Shortfall (CVaR_99) Reduction** | **`$42,627.36 USD`** | Conditional tail risk (CVaR_99) exposure reduction |
 
 #### Table 4E: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State
 Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$):
