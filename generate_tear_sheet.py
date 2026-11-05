@@ -1,7 +1,13 @@
-"""Generator script for Phase 1 & 2B Fairway Vintage Audit Tear Sheet.
+"""Generator script for Phase 1, 2B & Phase 3 Live OSINT Fairway Audit Tear Sheet.
 
-Refactored into a lightweight wrapper around MaritimeRiskEngine, reproducing
-the exact baseline PHASE1_VINTAGE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md and PHASE1_AUDIT_MANIFEST.json.
+Integrates Live OSINT & Environmental REST adapters:
+1. Open-Meteo REST API live hydrodynamics ingestion with Cubic Delta (psi_3) kernel smoothing.
+2. OSINT incident feed ingestion, publication lag (Delta_t) calculation, and SQLite persistence.
+3. Evaluates corridor risk profile via MaritimeRiskEngine with live smoothed significant wave height (Hs).
+4. Appends circuit breaker status tags and emits reproducible Markdown tear sheet & JSON audit manifest.
+
+Author: Nigerian Navy officer with 20+ years of operational experience
+ORCID: 0009-0008-0112-9273
 """
 
 from __future__ import annotations
@@ -14,6 +20,8 @@ from application.engine import COMMERCIAL_DISCLAIMER, MaritimeRiskEngine
 from application.ingestion_hygiene import IngestionHygieneService
 from application.isolation import get_isolated_database_connection
 from infrastructure.audit_manifest import AuditManifestBuilder
+from infrastructure.incident_feed_adapter import IncidentFeedAdapter
+from infrastructure.open_meteo_adapter import OpenMeteoHydroAdapter
 from infrastructure.osint_feed_loader import OSINTFeedLoader
 from infrastructure.sqlite_storage import SQLiteIncidentRepository
 
@@ -23,8 +31,10 @@ def run_phase1_audit(
     output_markdown_path: Path,
     telemetry_path: Path | None = None,
     manifest_path: Path | None = None,
+    corridor_id: str = "GOG_BONNY_BRASS_FAIRWAY",
+    vessel_profile_id: str = "STANDARD_SUEZMAX_85M",
 ) -> dict[str, Any]:
-    """Run full Phase 1, 1.2, 2A & 2B audit and emit tear sheet & manifest via MaritimeRiskEngine."""
+    """Run full Phase 1, 2B & Phase 3 live audit and emit tear sheet & manifest via MaritimeRiskEngine."""
     root_dir = dataset_path.parent.parent
 
     # 1. Load OSINT incident data and compute SHA-256 lineage hash
@@ -53,12 +63,29 @@ def run_phase1_audit(
         telemetry_records, telemetry_sha256 = OSINTFeedLoader.load_civilian_telemetry_from_json(telemetry_path)
         repo.insert_telemetry_batch(telemetry_records)
 
-    # 5. Execute evaluation via MaritimeRiskEngine
     config_dir = root_dir / "configs"
+    cfg_dir = config_dir if config_dir.exists() else None
+
+    # 5. Live Environmental & OSINT Ingestion via REST Adapters
+    # Ingest live metocean wave heights via Open-Meteo REST API
+    meteo_adapter = OpenMeteoHydroAdapter(config_dir=cfg_dir, db_connection=conn)
+    hydro_state = meteo_adapter.fetch_live_hydrodynamics(corridor_id=corridor_id)
+    live_hs = hydro_state.wave_height_m
+    hydro_tag = hydro_state.metadata_tag
+
+    # Probe live incident feed and calculate publication lag (Delta_t)
+    incident_adapter = IncidentFeedAdapter(config_dir=cfg_dir, db_connection=conn)
+    live_incidents, incident_tag = incident_adapter.fetch_incidents()
+    if live_incidents:
+        incident_adapter.calculate_publication_lags(live_incidents, in_hours=True)
+        incident_adapter.persist_incidents(live_incidents)
+        raw_incidents.extend(live_incidents)
+
+    # 6. Execute evaluation via MaritimeRiskEngine with live smoothed Hs
     if config_dir.exists():
         engine = MaritimeRiskEngine.from_config_files(
-            corridor_id="GOG_BONNY_BRASS_FAIRWAY",
-            vessel_profile_id="STANDARD_SUEZMAX_85M",
+            corridor_id=corridor_id,
+            vessel_profile_id=vessel_profile_id,
             config_dir=config_dir,
         )
     else:
@@ -69,9 +96,10 @@ def run_phase1_audit(
         telemetry=telemetry_records,
         dataset_sha256=dataset_sha256,
         telemetry_sha256=telemetry_sha256,
+        current_hs=live_hs,
     )
 
-    # 6. Emit PHASE1_AUDIT_MANIFEST.json using AuditManifestBuilder
+    # 7. Emit PHASE1_AUDIT_MANIFEST.json using AuditManifestBuilder
     manifest_builder = AuditManifestBuilder(root_dir)
     manifest_file = manifest_path or (root_dir / "PHASE1_AUDIT_MANIFEST.json")
     manifest_builder.write_manifest_file(
@@ -82,8 +110,34 @@ def run_phase1_audit(
         hydro_result=result.hydro_result,
     )
 
-    # 7. Write Markdown Tear Sheet
-    output_markdown_path.write_text(result.to_markdown(), encoding="utf-8")
+    # 8. Visually append circuit breaker / live telemetry banners and write Markdown Tear Sheet
+    md_content = result.to_markdown()
+    banners: list[str] = []
+
+    if hydro_tag and hydro_tag != "[LIVE_METOCEAN]":
+        banners.append(
+            f"> [!WARNING]\n"
+            f"> **CIRCUIT BREAKER ENGAGED ({hydro_tag})**: Upstream Open-Meteo REST API unavailable or timed out. "
+            f"Fell back to historical 90th percentile baseline wave height ({live_hs:.2f}m)."
+        )
+    elif hydro_tag == "[LIVE_METOCEAN]":
+        banners.append(
+            f"> [!NOTE]\n"
+            f"> **LIVE METOCEAN TELEMETRY ({hydro_tag})**: Successfully ingested from Open-Meteo Marine REST API. "
+            f"Live smoothed significant wave height $H_s = {live_hs:.2f}\\text{{m}}$ (Cubic Delta $\\psi_3$ kernel)."
+        )
+
+    if incident_tag and incident_tag != "[LIVE_INCIDENTS]":
+        banners.append(
+            f"> [!WARNING]\n"
+            f"> **CIRCUIT BREAKER ENGAGED ({incident_tag})**: Live OSINT incident feed unavailable or timed out. "
+            f"Underwriting engine operating on verified local archive."
+        )
+
+    if banners:
+        md_content = "\n\n".join(banners) + "\n\n" + md_content
+
+    output_markdown_path.write_text(md_content, encoding="utf-8")
 
     return {
         "dataset_sha256": dataset_sha256,
@@ -98,6 +152,9 @@ def run_phase1_audit(
         "hydro_result": result.hydro_result,
         "sprt_result": result.sprt_result,
         "jwc_result": result.jwc_result,
+        "live_hs": live_hs,
+        "hydro_tag": hydro_tag,
+        "incident_tag": incident_tag,
         "manifest_path": str(manifest_file),
         "output_path": str(output_markdown_path),
     }
@@ -115,6 +172,8 @@ if __name__ == "__main__":
     )
     print(f"Generated tear sheet: {res['output_path']}")
     print(f"Generated audit manifest: {res['manifest_path']}")
+    print(f"Live Metocean Hs: {res['live_hs']:.4f} m ({res['hydro_tag']})")
+    print(f"Incident Feed Status: {res['incident_tag']}")
     print(f"Dataset SHA-256: {res['dataset_sha256']}")
     print(f"Telemetry SHA-256: {res['telemetry_sha256']}")
     print(f"Incidents: {res['raw_count']} raw -> {res['dedup_count']} deduplicated")

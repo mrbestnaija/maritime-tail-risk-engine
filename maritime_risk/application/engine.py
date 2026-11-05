@@ -480,6 +480,7 @@ class MaritimeRiskEngine:
         decomposer_name: Optional[str] = None,
         tail_fitter_name: Optional[str] = None,
         pricer_name: Optional[str] = None,
+        current_hs: Optional[float] = None,
     ) -> CorridorAuditResult:
         """Evaluate tail risk profile in-memory across incidents and telemetry."""
         eval_as_of = as_of or datetime.now(timezone.utc)
@@ -633,10 +634,11 @@ class MaritimeRiskEngine:
             )
 
         # 4. Evaluate Hydrodynamic envelope
-        mean_hs = float(np.mean(Y[:, 1]))
+        mean_hs = float(current_hs) if current_hs is not None else float(np.mean(Y[:, 1]))
+        effective_hs = mean_hs
         mean_dark = float(np.mean(Y[:, 2]) / 10.0)
         hydro_res = evaluate_hydrodynamic_envelope(
-            wave_height_m=mean_hs,
+            wave_height_m=effective_hs,
             sar_dark_ratio=mean_dark,
             spec=self.hyperparams.hydro,
         )

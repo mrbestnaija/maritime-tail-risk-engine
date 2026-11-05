@@ -8,7 +8,7 @@
     "longitude_min": 6.5,
     "longitude_max": 7.5
   },
-  "timestamp_utc": "2026-11-04T23:34:58.525364+00:00",
+  "timestamp_utc": "2026-11-05T05:56:02.211125+00:00",
   "lineage_hashes": {
     "incident_dataset_sha256": "cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c",
     "civilian_telemetry_dataset_sha256": "c3685e086d228af1f3d0e44314f3c50e5af000406c0d55559d68d77c95157db7",
@@ -51,10 +51,10 @@
     "composite_corridor_cvar_99": 36.97197792893952
   },
   "hydrodynamic_physics": {
-    "significant_wave_height_m": 1.6175000000000002,
-    "effective_wave_height_m": 1.6175000000000002,
-    "boarding_feasibility": 0.6929080303681786,
-    "composite_hazard_score": 1.792899528577662
+    "significant_wave_height_m": 0.588922888616891,
+    "effective_wave_height_m": 0.588922888616891,
+    "boarding_feasibility": 0.988035443180564,
+    "composite_hazard_score": 2.5565417092297094
   },
   "sprt_surveillance": {
     "state": "RED_ESCALATION_BREACH",
@@ -70,15 +70,15 @@
     "delay_days": 31.426181239598595,
     "cvar_99_demurrage_usd": 1414178.1557819368,
     "catastrophic_tail_loss_usd": 12940192.275128834,
-    "expected_7d_tail_loss_usd": 1115360.9001448376,
-    "actuarial_7d_war_risk_ap_bps": 131.21892942880442,
+    "expected_7d_tail_loss_usd": 1309803.5815586941,
+    "actuarial_7d_war_risk_ap_bps": 154.0945390069052,
     "jwc_market_benchmark_bps": 15.0,
-    "mispricing_spread_bps": 116.21892942880442,
-    "per_transit_mispricing_usd": 987860.9001448376,
+    "mispricing_spread_bps": 139.0945390069052,
+    "per_transit_mispricing_usd": 1182303.5815586941,
     "tactical_hardening_dividend": {
-      "delta_ap_usd": 62608.92945611907,
-      "dividend_net_usd": -112391.07054388092,
-      "delta_reserve_usd": 42627.35622544276,
+      "delta_ap_usd": 78067.09079723628,
+      "dividend_net_usd": -96932.90920276372,
+      "delta_reserve_usd": 53152.06181939491,
       "escort_opex_cost_usd": 175000.0
     }
   },
