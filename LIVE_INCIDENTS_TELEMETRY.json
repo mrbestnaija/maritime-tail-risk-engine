@@ -1,0 +1,9 @@
+{
+  "incident_count": 0,
+  "metadata_tag": "[ESTIMATED_INCIDENTS]",
+  "mean_lag_hours": 0.0,
+  "gpd_shape_xi": 0.18,
+  "gpd_scale_sigma": 1.5,
+  "var_99": 0.0,
+  "cvar_99": 0.0
+}

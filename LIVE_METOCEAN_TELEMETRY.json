@@ -1,0 +1,12 @@
+{
+  "corridor_id": "GOG_BONNY_BRASS_FAIRWAY",
+  "wave_height_m": 2.15,
+  "raw_wave_height_m": 2.15,
+  "wave_period_s": 7.5,
+  "is_estimated": true,
+  "metadata_tag": "[ESTIMATED_HYDRODYNAMICS]",
+  "endpoint_url": "https://marine-api.open-meteo.com/v1/marine",
+  "timestamp_utc": "2026-11-05T04:45:29.640993+00:00",
+  "sample_size": 0,
+  "smoothing_kernel": "cubic_delta_psi3"
+}
