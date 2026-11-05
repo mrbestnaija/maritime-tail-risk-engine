@@ -29,7 +29,7 @@ from ..core.gpd_tail_fitter import GPDTailRiskEstimate, compute_tail_risk
 from ..core.hydro_envelope import HydrodynamicEnvelopeResult, evaluate_hydrodynamic_envelope
 from ..core.jwc_pricer import JWCPricingResult
 from ..core.metrics import compute_tail_risk_profile
-from ..core.models import CivilianSensorTelemetry, MaritimeIncident
+from ..core.models import CivilianSensorTelemetry, MaritimeIncident, UninsurableRiskException
 from ..core.mssa_decomposer import MSSADecompositionResult
 from ..core.ports import IncidentSourcePort, TelemetrySourcePort
 from ..core.regime_switch import compute_regime_multiplier
@@ -622,6 +622,15 @@ class MaritimeRiskEngine:
             bayes_spec=self.hyperparams.bayes,
             gpd_spec=self.hyperparams.gpd,
         )
+
+        # UNINSURABLE TAIL REFUSAL GUARDRAIL:
+        # When shape parameter xi >= 1.0, mean tail risk diverges to infinity.
+        # The engine must explicitly REFUSE to price uninsurable risk.
+        if getattr(gpd_res, "shape_xi", 0.0) >= 1.0:
+            raise UninsurableRiskException(
+                f"Uninsurable tail risk: GPD shape xi={gpd_res.shape_xi:.4f} >= 1.0 implies infinite-mean exposure (E[X] = infinity). "
+                "Engine explicitly refuses to price uninsurable risk where mean tail expectation is undefined."
+            )
 
         # 4. Evaluate Hydrodynamic envelope
         mean_hs = float(np.mean(Y[:, 1]))
