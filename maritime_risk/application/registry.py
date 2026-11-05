@@ -109,6 +109,8 @@ class DefaultLloydsJWCPricer:
             wave_height_m=kwargs.get("wave_height_m", 1.2),
             wind_knots=kwargs.get("wind_knots"),
             hydro_spec=kwargs.get("hydro_spec"),
+            composite_cvar_99_lower=kwargs.get("composite_cvar_99_lower"),
+            composite_cvar_99_upper=kwargs.get("composite_cvar_99_upper"),
         )
 
 

@@ -59,6 +59,8 @@ class JWCPricingResult:
     ap_unprotected_anchor_bps: float = 0.0
     ap_secured_anchor_bps: float = 0.0
     composite_cvar_99_usd: float = 0.0
+    ap_credible_interval_lower_bps: Optional[float] = None
+    ap_credible_interval_upper_bps: Optional[float] = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert pricing result to dictionary for JSON serialization and audit manifests."""
@@ -189,6 +191,38 @@ def compute_jwc_7day_war_risk_ap(
     mispricing_spread_bps = actuarial_ap_bps - benchmark_bps
     per_transit_mispricing_usd = (mispricing_spread_bps / 10_000.0) * vessel_usd
 
+    # 7. Actuarial Credible Interval for 7-Day AP derived from CVaR_0.99 uncertainty bounds
+    cvar_lower = kwargs.get("composite_cvar_99_lower")
+    cvar_upper = kwargs.get("composite_cvar_99_upper")
+    ap_ci_lower_bps: Optional[float] = None
+    ap_ci_upper_bps: Optional[float] = None
+
+    if cvar_lower is not None:
+        c_low = max(float(cvar_lower), 0.0)
+        delay_low = c_low * v_spec.delay_days_per_cvar_unit
+        demurrage_usd_low = delay_low * demurrage_rate
+        catastrophic_loss_usd_low = (c_low / 10.0) * catastrophic_rate
+        exp_loss_low = min(
+            effective_vessel_prob * (demurrage_usd_low + catastrophic_loss_usd_low) * reg_mult,
+            vessel_usd,
+        )
+        ap_ci_lower_bps = (exp_loss_low / vessel_usd) * 10_000.0
+        if floor_bps > 0.0:
+            ap_ci_lower_bps = max(ap_ci_lower_bps, floor_bps)
+
+    if cvar_upper is not None:
+        c_high = max(float(cvar_upper), 0.0)
+        delay_high = c_high * v_spec.delay_days_per_cvar_unit
+        demurrage_usd_high = delay_high * demurrage_rate
+        catastrophic_loss_usd_high = (c_high / 10.0) * catastrophic_rate
+        exp_loss_high = min(
+            effective_vessel_prob * (demurrage_usd_high + catastrophic_loss_usd_high) * reg_mult,
+            vessel_usd,
+        )
+        ap_ci_upper_bps = (exp_loss_high / vessel_usd) * 10_000.0
+        if floor_bps > 0.0:
+            ap_ci_upper_bps = max(ap_ci_upper_bps, floor_bps)
+
     dividend_data = compute_tactical_hardening_dividend(
         mothership_loitering_idx=mothership_loitering_idx,
         distance_pmsc_km=distance_pmsc_km,
@@ -233,6 +267,8 @@ def compute_jwc_7day_war_risk_ap(
         ap_unprotected_anchor_bps=dividend_data["ap_unprotected_anchor_bps"],
         ap_secured_anchor_bps=dividend_data["ap_secured_anchor_bps"],
         composite_cvar_99_usd=dividend_data["composite_cvar_99_usd"],
+        ap_credible_interval_lower_bps=ap_ci_lower_bps,
+        ap_credible_interval_upper_bps=ap_ci_upper_bps,
     )
 
 

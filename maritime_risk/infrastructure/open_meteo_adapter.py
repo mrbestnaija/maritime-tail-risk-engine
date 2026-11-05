@@ -224,7 +224,7 @@ class OpenMeteoHydroAdapter:
         now_utc = datetime.now(timezone.utc).isoformat()
         cb_cfg = self.meteo_cfg.get("circuit_breaker", {})
         fallback_tag = str(cb_cfg.get("fallback_tag", "[ESTIMATED_HYDRODYNAMICS]"))
-        timeout_sec = float(cb_cfg.get("timeout_seconds", 5.0))
+        timeout_sec = float(cb_cfg.get("timeout_seconds", 10.0))
         if "api_endpoint" not in self.meteo_cfg:
             raise KeyError("Missing required 'api_endpoint' in open_meteo configuration")
         endpoint = str(self.meteo_cfg["api_endpoint"])

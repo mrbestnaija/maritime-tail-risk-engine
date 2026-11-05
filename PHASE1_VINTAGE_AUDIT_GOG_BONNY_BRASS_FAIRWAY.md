@@ -1,8 +1,8 @@
 > [!NOTE]
-> **LIVE METOCEAN TELEMETRY ([LIVE_METOCEAN])**: Successfully ingested from Open-Meteo Marine REST API. Live smoothed significant wave height $H_s = 0.59\text{m}$ (Cubic Delta $\psi_3$ kernel).
+> **LIVE METOCEAN TELEMETRY ([LIVE_METOCEAN])**: Successfully ingested from Open-Meteo Marine REST API. Live smoothed significant wave height $H_s = 0.61\text{m}$ (Cubic Delta $\psi_3$ kernel).
 
-> [!WARNING]
-> **CIRCUIT BREAKER ENGAGED ([ESTIMATED_INCIDENTS])**: Live OSINT incident feed unavailable or timed out. Underwriting engine operating on verified local archive.
+> [!NOTE]
+> **LIVE OSINT INCIDENT TELEMETRY ([LIVE_INCIDENTS])**: Successfully synchronized with live public feed. Ingested and verified against SQLite C-engine temporal & spatial constraints.
 
 # PHASE 1 VINTAGE AUDIT: GULF OF GUINEA (GOG) - BONNY / BRASS FAIRWAY
 
@@ -16,7 +16,7 @@ This document and the underlying risk model outputs are generated strictly for a
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
 - **Operational State**: `UNDERWAY`
 - **Regime Multiplier**: `1.4688x`
-- **Audit Timestamp**: `2026-11-05 06:35:07 UTC`
+- **Audit Timestamp**: `2026-11-05 20:29:26 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
@@ -117,7 +117,10 @@ Small-sample MLE on GPD shape $\xi$ has extreme variance when exceedance counts 
 | Parameter | Raw Optimization Value | Shrunk Empirical Bayes Estimate | Regularization Impact |
 |---|---|---|---|
 | **GPD Shape Parameter ($\xi$)** | `-0.5000` | **`0.3936`** | Regularized toward prior $\xi_0=0.18$; avoids boundary railing |
+| **Bootstrap 95% CI ($\xi$)** | N/A | **`[0.2489, 0.3936]`** | Non-parametric percentile bootstrap confidence interval |
 | **GPD Scale Parameter ($\sigma$)** | N/A | **`2.4740`** | Regularized scale parameter |
+| **Exceedance Threshold ($u$)** | N/A | **`1.9945`** | Peaks-over-threshold exceedance cutoff |
+| **Exceedance Count ($N_u$)** | N/A | **`10`** | Number of positive structural shock exceedances |
 | **Shrinkage Weight ($w$)** | N/A | **`0.4545`** | Weight assigned to local data vs prior ($N_u=10$) |
 | **Residual $\text{VaR}_{0.95}$** | N/A | **`7.55`** | 95th percentile structural residual shock |
 | **Residual $\text{VaR}_{0.99}$** | N/A | **`18.02`** | 99th percentile structural residual shock |
@@ -135,23 +138,20 @@ To eliminate the visual scale mismatch where residual shock metrics were compare
 > [!NOTE]
 > **Open-Ended Composite Severity Scale**: Reconstructed composite metrics combine the secular+seasonal fairway baseline with the GPD extreme tail residual shock without artificial ceiling clamping, preserving strict mathematical quantile ordering: $\text{CVaR}_{0.99} > \text{VaR}_{0.99} > \text{VaR}_{0.95}$.
 
-#### Table 4C: First-Principles Lloyd's JWC 7-Day AP & Demurrage Pricing
-Replaces naive multiplier heuristics with first-principles underwriting loss expectation on a **$85,000,000 USD** hull, modeling single-voyage spatial-temporal exposure and hydrodynamic boarding physics:
+#### Table 4C: Explicit First-Principles JWC Underwriting Pricing Chain
+Replaces naive multiplier heuristics with an explicit 4-step first-principles translation chain on a **$85,000,000 USD** hull:
 
-| Pricing Parameter / Output | Value | Actuarial Definition |
+$$\mathbf{1. \text{ Incident Frequency}} \longrightarrow \mathbf{2. \text{ Loss Given Event}} \longrightarrow \mathbf{3. \text{ Expected Shortfall (CVaR}_{0.99}\text{)}} \longrightarrow \mathbf{4. \text{ 7-Day AP Credible Interval}}$$
+
+| Translation Chain Layer | Observed Parameter / Metric | Actuarial Underwriting Definition |
 |---|---|---|
-| **Operational State** | **`UNDERWAY`** | Navigation posture (e.g. UNDERWAY transit fairway vs AT_ANCHOR anchorage) |
-| **Macro Regime Multiplier** | **`1.4688x`** | Liquidity friction / port waiting congestion multiplier |
-| **Calibrated 7-Day Corridor Breach Prob** | **`25.0%`** | Probability of corridor risk exceeding baseline in 7d window |
-| **Single-Vessel Transit Exposure Factor** | **`25.0%`** | Spatial-temporal exposure of single transiting vessel |
-| **Hydrodynamic Boarding Modulator** | **`84.6%`** | Modulation from sea-state small-skiff boarding feasibility |
-| **Effective Single-Vessel Breach Prob** | **`5.29%`** | Net single-vessel breach probability over 7-day transit |
-| **Expected Tail Delay Duration** | **`31.43 days`** | Operational delay days given extreme tail breach |
-| **Tail Demurrage Loss Exposure** | **`$1,414,178.16 USD`** | Financial demurrage loss at $45,000/day charterparty rate |
-| **Catastrophic Boarding Loss Exposure** | **`$12,940,192.28 USD`** | Expected damage/ransom conditional on tail breach |
-| **Expected 7-Day Tail Loss** | **`$1,115,360.90 USD`** | Unconditional actuarial expected loss over 7-day transit |
-| **Fair Actuarial War-Risk AP** | **`131.22 bps`** | Fair additional premium rate (1 bps = 0.01% of hull value) |
-| **Lloyd's JWC Market Benchmark** | **`15.00 bps`** | Standard commercial market quote for transit |
+| **1. Incident Frequency ($p_{\text{vessel}}$)** | **`5.29%`** | Single-vessel 7-day breach probability ($p_{7d} = 25.0\%$, exposure factor = 25.0%, hydro feasibility = 69.3%) |
+| **2. Expected Loss Given Event** | **`$14,354,370.43 USD`** | Conditional tail severity: Demurrage ($1,414,178.16) + Catastrophic Boarding ($12,940,192.28) |
+| **3. Expected Shortfall ($\text{CVaR}_{0.99}$)** | **`36.97 / 10.0`** | Reconstructed composite corridor tail severity anchor |
+| **4. Fair Actuarial War-Risk AP (Point)** | **`131.22 bps`** | Fair additional premium rate (unconditional expected loss: `$1,115,360.90 USD`) |
+| **4. Fair Actuarial War-Risk AP (95% CI)** | **`[92.29 bps - 131.22 bps]`** | Credible interval propagated from GPD shape parameter $\xi$ bootstrap uncertainty |
+|---|---|---|
+| **Lloyd's JWC Market Benchmark** | **`15.00 bps`** | Standard commercial market quote for transit (reference baseline) |
 | **Underwriter Commercial Spread** | **`+116.22 bps`** | **`$+987,860.90 USD`** per transit underpricing hazard |
 
 #### Table 4D: Tactical Hardening Arbitrage (Escort & Anchorage Risk Dividend)

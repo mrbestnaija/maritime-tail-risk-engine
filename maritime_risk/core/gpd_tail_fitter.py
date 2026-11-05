@@ -50,6 +50,8 @@ class GPDTailRiskEstimate:
     composite_corridor_cvar_99: float = 0.0
     shrinkage_weight_w: float = 0.0
     raw_xi: float = 0.0
+    xi_ci_lower: Optional[float] = None
+    xi_ci_upper: Optional[float] = None
 
 
 def gpd_cdf(y: np.ndarray, xi: float, sigma: float) -> np.ndarray:
@@ -134,6 +136,88 @@ def compute_actuarial_war_risk_loading_bps(
     return float(loss_fraction * tail_prob * 10_000.0)
 
 
+def compute_xi_bootstrap_ci(
+    exceedances: Sequence[float],
+    n_bootstrap: int = 200,
+    ci_level: float = 0.95,
+    xi_cap: float = 0.95,
+    bayes_spec: Optional[EmpiricalBayesSpec] = None,
+    use_shrinkage: bool = True,
+    small_sample_threshold: int = 25,
+    random_seed: Optional[int] = 42,
+) -> tuple[float, float]:
+    """Compute non-parametric bootstrap confidence interval for GPD shape parameter xi.
+
+    Resamples positive exceedances with replacement and fits shape parameter xi
+    (with Empirical Bayes shrinkage when applicable) to determine the empirical
+    percentile confidence interval [ci_lower, ci_upper].
+    """
+    exc_arr = np.asarray(exceedances, dtype=np.float64)
+    exc_arr = exc_arr[exc_arr > 0]
+    n_u = len(exc_arr)
+    if n_u < 3:
+        prior_xi = float(bayes_spec.prior_xi if bayes_spec else 0.0)
+        return prior_xi, prior_xi
+
+    var_exc = float(np.var(exc_arr, ddof=1)) if n_u > 1 else 0.0
+    if var_exc <= 1e-12:
+        return 0.0, 0.0
+
+    b_spec = bayes_spec or EmpiricalBayesSpec()
+    rng = np.random.default_rng(seed=random_seed)
+    xi_boots: list[float] = []
+
+    for _ in range(n_bootstrap):
+        sample = rng.choice(exc_arr, size=n_u, replace=True)
+        if use_shrinkage and n_u < small_sample_threshold:
+            xi_s, _, _ = shrink_gpd_parameters(sample, spec=b_spec)
+            xi_boots.append(float(np.clip(xi_s, -0.499, xi_cap)))
+        else:
+            m = float(np.mean(sample))
+            v = float(np.var(sample, ddof=1)) if len(sample) > 1 else 0.0
+            if v <= 1e-6:
+                xi_boots.append(0.0)
+                continue
+            xi_0 = float(np.clip(0.5 * (1.0 - (m**2) / v), -0.5, xi_cap))
+            sigma_0 = float(max(0.5 * m * (1.0 + (m**2) / v), 1e-4))
+
+            def nll(params: list[float]) -> float:
+                xi_val, sig_val = params[0], params[1]
+                if sig_val <= 1e-6 or xi_val > xi_cap or xi_val < -0.5:
+                    return 1e12
+                if abs(xi_val) < 1e-6:
+                    return float(n_u * math.log(sig_val) + np.sum(sample) / sig_val)
+                terms = 1.0 + (xi_val * sample) / sig_val
+                if np.any(terms <= 0.0):
+                    return 1e12
+                return float(n_u * math.log(sig_val) + (1.0 + 1.0 / xi_val) * np.sum(np.log(terms)))
+
+            try:
+                res = minimize(
+                    nll,
+                    [xi_0, sigma_0],
+                    method="L-BFGS-B",
+                    bounds=[(-0.5, xi_cap), (1e-4, None)],
+                )
+                if res.success and np.isfinite(res.x[0]):
+                    xi_boots.append(float(np.clip(res.x[0], -0.499, xi_cap)))
+                else:
+                    xi_boots.append(xi_0)
+            except Exception:
+                xi_boots.append(xi_0)
+
+    if not xi_boots:
+        return 0.0, 0.0
+
+    alpha_tail = (1.0 - ci_level) / 2.0
+    lower_pct = alpha_tail * 100.0
+    upper_pct = (1.0 - alpha_tail) * 100.0
+
+    ci_lower = float(np.percentile(xi_boots, lower_pct))
+    ci_upper = float(np.percentile(xi_boots, upper_pct))
+    return ci_lower, ci_upper
+
+
 def fit_pot_gpd(
     data: Sequence[float],
     threshold_u: Optional[float] = None,
@@ -205,6 +289,8 @@ def fit_pot_gpd(
             composite_corridor_cvar_99=float(baseline_anchor + u_val),
             shrinkage_weight_w=0.0,
             raw_xi=b_spec.prior_xi,
+            xi_ci_lower=float(b_spec.prior_xi),
+            xi_ci_upper=float(b_spec.prior_xi),
         )
 
     # Adaptive quantile selection
@@ -237,6 +323,8 @@ def fit_pot_gpd(
             composite_corridor_cvar_99=float(baseline_anchor + threshold_u),
             shrinkage_weight_w=0.0,
             raw_xi=b_spec.prior_xi,
+            xi_ci_lower=float(b_spec.prior_xi),
+            xi_ci_upper=float(b_spec.prior_xi),
         )
 
     p_u = float(n_u / n_total)
@@ -320,6 +408,16 @@ def fit_pot_gpd(
         res_cvar_99, insured_vessel_usd=vessel_usd, vessel_spec=v_spec, gpd_spec=g_spec
     )
 
+    xi_ci_lower, xi_ci_upper = compute_xi_bootstrap_ci(
+        exceedances=exceedances,
+        n_bootstrap=200,
+        ci_level=0.95,
+        xi_cap=xi_cap,
+        bayes_spec=b_spec,
+        use_shrinkage=use_shrinkage,
+        small_sample_threshold=g_spec.small_sample_threshold,
+    )
+
     return GPDTailRiskEstimate(
         shape_xi=xi_shrunk,
         scale_sigma=sigma_shrunk,
@@ -339,6 +437,8 @@ def fit_pot_gpd(
         composite_corridor_cvar_99=comp_cvar_99,
         shrinkage_weight_w=w_weight,
         raw_xi=raw_xi,
+        xi_ci_lower=xi_ci_lower,
+        xi_ci_upper=xi_ci_upper,
     )
 
 
@@ -468,6 +568,8 @@ def compute_macro_modulated_gpd_tail(
         composite_corridor_cvar_99=comp_cvar_99,
         shrinkage_weight_w=base_fit.shrinkage_weight_w,
         raw_xi=base_fit.raw_xi,
+        xi_ci_lower=base_fit.xi_ci_lower,
+        xi_ci_upper=base_fit.xi_ci_upper,
     )
 
 
@@ -618,6 +720,8 @@ def compute_tail_risk(
         composite_corridor_cvar_99=comp_cvar_99,
         shrinkage_weight_w=1.0,
         raw_xi=xi_val,
+        xi_ci_lower=float(kwargs.get("xi_ci_lower", xi_val)),
+        xi_ci_upper=float(kwargs.get("xi_ci_upper", xi_val)),
     )
 
 
@@ -628,6 +732,7 @@ __all__ = [
     "gpd_cdf",
     "compute_gpd_var_cvar",
     "compute_actuarial_war_risk_loading_bps",
+    "compute_xi_bootstrap_ci",
     "fit_pot_gpd",
     "compute_macro_modulated_gpd_tail",
 ]

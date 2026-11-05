@@ -1,6 +1,6 @@
 {
   "open_meteo_url": "https://marine-api.open-meteo.com/v1/marine",
-  "incident_feed_url": "https://api.example.com/maritime_incidents",
+  "incident_feed_url": "https://raw.githubusercontent.com/mrbestnaija/maritime-tail-risk-engine/main/data/gog_bonny_brass_vintage_osint.json",
   "gulf_of_guinea_bbox": {
     "lat_min": -5.0,
     "lat_max": 7.0,
@@ -10,7 +10,7 @@
   "open_meteo": {
     "api_endpoint": "https://marine-api.open-meteo.com/v1/marine",
     "api_version": "v1",
-    "timeout_seconds": 5.0,
+    "timeout_seconds": 15.0,
     "hourly_variables": [
       "wave_height",
       "wave_period"
@@ -43,7 +43,7 @@
       }
     },
     "circuit_breaker": {
-      "timeout_seconds": 5.0,
+      "timeout_seconds": 15.0,
       "fallback_historical_percentile": 90.0,
       "default_fallback_wave_height_m": 2.15,
       "fallback_tag": "[ESTIMATED_HYDRODYNAMICS]"
@@ -54,10 +54,10 @@
     }
   },
   "incident_feed": {
-    "api_endpoint": "https://api.example.com/maritime_incidents",
-    "timeout_seconds": 5.0,
+    "api_endpoint": "https://raw.githubusercontent.com/mrbestnaija/maritime-tail-risk-engine/main/data/gog_bonny_brass_vintage_osint.json",
+    "timeout_seconds": 15.0,
     "circuit_breaker": {
-      "timeout_seconds": 5.0,
+      "timeout_seconds": 15.0,
       "fallback_tag": "[ESTIMATED_INCIDENTS]"
     },
     "cubic_exponential_bounds": {

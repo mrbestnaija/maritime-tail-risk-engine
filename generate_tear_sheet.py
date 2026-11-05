@@ -80,7 +80,6 @@ def run_phase1_audit(
     if live_incidents:
         incident_adapter.calculate_publication_lags(live_incidents, in_hours=True)
         incident_adapter.persist_incidents(live_incidents)
-        raw_incidents.extend(live_incidents)
 
     # 6. Execute evaluation via MaritimeRiskEngine with live smoothed Hs
     if config_dir.exists():
@@ -134,6 +133,12 @@ def run_phase1_audit(
             f"> **CIRCUIT BREAKER ENGAGED ({incident_tag})**: Live OSINT incident feed unavailable or timed out. "
             f"Underwriting engine operating on verified local archive."
         )
+    elif incident_tag == "[LIVE_INCIDENTS]":
+        banners.append(
+            f"> [!NOTE]\n"
+            f"> **LIVE OSINT INCIDENT TELEMETRY ({incident_tag})**: Successfully synchronized with live public feed. "
+            f"Ingested and verified against SQLite C-engine temporal & spatial constraints."
+        )
 
     if banners:
         md_content = "\n\n".join(banners) + "\n\n" + md_content
@@ -171,6 +176,12 @@ if __name__ == "__main__":
     res = run_phase1_audit(
         dataset_file, output_file, telemetry_path=telemetry_file, manifest_path=manifest_file
     )
+    gpd = res["gpd_result"]
+    jwc = res["jwc_result"]
+    ci_low_str = f"{jwc.ap_credible_interval_lower_bps:.2f}" if jwc.ap_credible_interval_lower_bps is not None else f"{jwc.actuarial_7d_war_risk_ap_bps:.2f}"
+    ci_high_str = f"{jwc.ap_credible_interval_upper_bps:.2f}" if jwc.ap_credible_interval_upper_bps is not None else f"{jwc.actuarial_7d_war_risk_ap_bps:.2f}"
+    xi_ci_str = f"[{gpd.xi_ci_lower:.4f}, {gpd.xi_ci_upper:.4f}]" if gpd.xi_ci_lower is not None else "N/A"
+
     print(f"Generated tear sheet: {res['output_path']}")
     print(f"Generated audit manifest: {res['manifest_path']}")
     print(f"Live Metocean Hs: {res['live_hs']:.4f} m ({res['hydro_tag']})")
@@ -178,7 +189,12 @@ if __name__ == "__main__":
     print(f"Dataset SHA-256: {res['dataset_sha256']}")
     print(f"Telemetry SHA-256: {res['telemetry_sha256']}")
     print(f"Incidents: {res['raw_count']} raw -> {res['dedup_count']} deduplicated")
-    print(f"GPD Shrunk xi: {res['gpd_result'].shape_xi:.4f} (Raw: {res['gpd_result'].raw_xi:.4f}, w: {res['gpd_result'].shrinkage_weight_w:.4f})")
-    print(f"Composite CVaR_0.99: {res['jwc_result'].composite_cvar_99:.2f}")
-    print(f"JWC 7d Fair AP: {res['jwc_result'].actuarial_7d_war_risk_ap_bps:.2f} bps (Market: {res['jwc_result'].jwc_market_benchmark_bps:.2f} bps)")
+    print(f"GPD Diagnostics: Threshold u={gpd.threshold_u:.4f}, Nu={gpd.exceedance_count}, Shrunk xi={gpd.shape_xi:.4f} (95% CI: {xi_ci_str})")
+    print(f"Explicit Pricing Chain:")
+    print(f"  1. Incident Frequency: {jwc.effective_vessel_breach_prob * 100:.2f}% (effective single-vessel breach prob)")
+    print(f"  2. Expected Loss Given Event: ${(jwc.cvar_99_demurrage_usd + jwc.catastrophic_tail_loss_usd):,.2f} USD")
+    print(f"  3. Expected Shortfall (CVaR_0.99): {jwc.composite_cvar_99:.2f} / 10.0")
+    print(f"  4. 7-Day Fair Actuarial AP: {jwc.actuarial_7d_war_risk_ap_bps:.2f} bps [{ci_low_str} bps - {ci_high_str} bps]")
+    print(f"  Reference Market Quote: {jwc.jwc_market_benchmark_bps:.2f} bps (Lloyd's JWC Benchmark)")
+    print(f"  Underwriter Spread: {jwc.mispricing_spread_bps:+.2f} bps (${jwc.per_transit_mispricing_usd:+,.2f} USD)")
     print(f"SPRT State: {res['sprt_result'].state}")

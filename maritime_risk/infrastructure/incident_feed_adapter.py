@@ -14,6 +14,7 @@ ORCID: 0009-0008-0112-9273
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -319,7 +320,7 @@ def update_empirical_gpd(
 
 def fetch_incidents(
     feed_url: Optional[str] = None,
-    timeout_sec: float = 5.0,
+    timeout_sec: float = 10.0,
     force_circuit_breaker: bool = False,
     config: Optional[dict[str, Any]] = None,
     config_dir: Optional[Path | str] = None,
@@ -373,9 +374,13 @@ def fetch_incidents(
             raw_data = resp.read()
             data = json.loads(raw_data.decode("utf-8"))
 
-        raw_items = data.get("incidents", data) if isinstance(data, dict) else data
-        if not isinstance(raw_items, list):
-            return [], fallback_tag
+        is_geojson = isinstance(data, dict) and "features" in data and isinstance(data["features"], list)
+        if is_geojson:
+            raw_items = data["features"]
+        else:
+            raw_items = data.get("incidents", data) if isinstance(data, dict) else data
+            if not isinstance(raw_items, list):
+                return [], fallback_tag
 
         incidents: list[MaritimeIncident] = []
         for idx, item in enumerate(raw_items):
@@ -385,20 +390,75 @@ def fetch_incidents(
             if not isinstance(item, dict):
                 continue
 
-            inc_id = str(item.get("incident_id") or item.get("id") or f"INC-OSINT-{idx:04d}")
-            event_t = int(item["event_time"])
-            pub_t = int(item["pub_time"])
+            if is_geojson:
+                props = item.get("properties", {})
+                geom = item.get("geometry", {})
+                coords = geom.get("coordinates", [DEFAULT_FAIRWAY_CENTROID_LON, DEFAULT_FAIRWAY_CENTROID_LAT])
+                lon = float(coords[0]) if len(coords) > 0 else DEFAULT_FAIRWAY_CENTROID_LON
+                lat = float(coords[1]) if len(coords) > 1 else DEFAULT_FAIRWAY_CENTROID_LAT
+                event_type = str(props.get("eventtype") or "INC")
+                event_id = str(props.get("eventid") or idx)
+                inc_id = f"GDACS-{event_type}-{event_id}"
 
-            # Temporal paradox check
-            if pub_t < event_t:
-                continue
+                fromdate_str = props.get("fromdate")
+                if fromdate_str:
+                    try:
+                        dt = datetime.fromisoformat(fromdate_str.replace("Z", "+00:00"))
+                        event_t = int(dt.timestamp())
+                    except Exception:
+                        event_t = int(datetime.now(timezone.utc).timestamp())
+                else:
+                    event_t = int(datetime.now(timezone.utc).timestamp())
 
-            lat = float(item.get("latitude", item.get("lat", DEFAULT_FAIRWAY_CENTROID_LAT)))
-            lon = float(item.get("longitude", item.get("lon", DEFAULT_FAIRWAY_CENTROID_LON)))
-            min_sev = float(item.get("min_severity", item.get("severity", 1.0)))
-            max_sev = float(item.get("max_severity", item.get("severity", 1.0)))
-            feed_src = str(item.get("feed_source", "LIVE_FEED"))
-            vessel = item.get("vessel_name")
+                mod_str = props.get("datemodified") or fromdate_str
+                if mod_str:
+                    try:
+                        dt_m = datetime.fromisoformat(mod_str.replace("Z", "+00:00"))
+                        pub_t = int(dt_m.timestamp())
+                    except Exception:
+                        pub_t = event_t
+                else:
+                    pub_t = event_t
+                if pub_t < event_t:
+                    pub_t = event_t
+
+                # Extract severity score and clamp to [0.0, 10.0]
+                alert_score = props.get("alertscore")
+                sev_obj = props.get("severitydata", {})
+                num_sev = sev_obj.get("severity") if isinstance(sev_obj, dict) else None
+                if alert_score is not None:
+                    try:
+                        base_sev = float(alert_score)
+                    except Exception:
+                        base_sev = 1.0
+                elif num_sev is not None:
+                    try:
+                        base_sev = float(num_sev)
+                    except Exception:
+                        base_sev = 1.0
+                else:
+                    base_sev = 1.0
+
+                min_sev = float(np.clip(base_sev, 0.0, 10.0))
+                max_sev = min_sev
+                feed_src = "GDACS_OSINT"
+                vessel = str(props.get("name") or props.get("eventname") or "UNNAMED")
+            else:
+                inc_id = str(item.get("incident_id") or item.get("id") or f"INC-OSINT-{idx:04d}")
+                event_t = int(item["event_time"])
+                pub_t = int(item["pub_time"])
+
+                # Temporal paradox check
+                if pub_t < event_t:
+                    continue
+
+                lat = float(item.get("latitude", item.get("lat", DEFAULT_FAIRWAY_CENTROID_LAT)))
+                lon = float(item.get("longitude", item.get("lon", DEFAULT_FAIRWAY_CENTROID_LON)))
+                min_sev = float(item.get("min_severity", item.get("severity", 1.0)))
+                max_sev = float(item.get("max_severity", item.get("severity", 1.0)))
+                feed_src = str(item.get("feed_source", "LIVE_FEED"))
+                vessel = item.get("vessel_name")
+
             raw_serialized = json.dumps(item, sort_keys=True)
             l_hash = str(item.get("lineage_hash") or hashlib.sha256(raw_serialized.encode("utf-8")).hexdigest())
 

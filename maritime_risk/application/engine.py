@@ -25,7 +25,11 @@ import numpy as np
 from .ingestion_hygiene import IngestionHygieneService
 from .registry import PluginRegistry, default_registry
 from ..core.calibration import brier_score, log_loss
-from ..core.gpd_tail_fitter import GPDTailRiskEstimate, compute_tail_risk
+from ..core.gpd_tail_fitter import (
+    GPDTailRiskEstimate,
+    compute_gpd_var_cvar,
+    compute_tail_risk,
+)
 from ..core.hydro_envelope import HydrodynamicEnvelopeResult, evaluate_hydrodynamic_envelope
 from ..core.jwc_pricer import JWCPricingResult
 from ..core.metrics import compute_tail_risk_profile
@@ -123,6 +127,8 @@ class CorridorAuditResult:
                 "scale_sigma": float(self.gpd_result.scale_sigma),
                 "threshold_u": float(self.gpd_result.threshold_u),
                 "exceedance_count": int(self.gpd_result.exceedance_count),
+                "xi_ci_lower": float(self.gpd_result.xi_ci_lower) if self.gpd_result.xi_ci_lower is not None else None,
+                "xi_ci_upper": float(self.gpd_result.xi_ci_upper) if self.gpd_result.xi_ci_upper is not None else None,
                 "var_95": float(self.gpd_result.var_95),
                 "var_99": float(self.gpd_result.var_99),
                 "cvar_99": float(self.gpd_result.cvar_99),
@@ -160,6 +166,8 @@ class CorridorAuditResult:
                 "catastrophic_tail_loss_usd": float(self.jwc_result.catastrophic_tail_loss_usd),
                 "expected_7d_tail_loss_usd": float(self.jwc_result.expected_7d_tail_loss_usd),
                 "actuarial_7d_war_risk_ap_bps": float(self.jwc_result.actuarial_7d_war_risk_ap_bps),
+                "ap_credible_interval_lower_bps": float(self.jwc_result.ap_credible_interval_lower_bps) if self.jwc_result.ap_credible_interval_lower_bps is not None else None,
+                "ap_credible_interval_upper_bps": float(self.jwc_result.ap_credible_interval_upper_bps) if self.jwc_result.ap_credible_interval_upper_bps is not None else None,
                 "jwc_market_benchmark_bps": float(self.jwc_result.jwc_market_benchmark_bps),
                 "mispricing_spread_bps": float(self.jwc_result.mispricing_spread_bps),
                 "per_transit_mispricing_usd": float(self.jwc_result.per_transit_mispricing_usd),
@@ -193,6 +201,27 @@ class CorridorAuditResult:
 
         # Reconstructed baseline
         baseline_val = float(np.mean(self.mssa_result.trend[:, 0] + self.mssa_result.seasonal[:, 0]))
+
+        ci_ap_low = (
+            f"{self.jwc_result.ap_credible_interval_lower_bps:.2f}"
+            if self.jwc_result.ap_credible_interval_lower_bps is not None
+            else f"{self.jwc_result.actuarial_7d_war_risk_ap_bps:.2f}"
+        )
+        ci_ap_high = (
+            f"{self.jwc_result.ap_credible_interval_upper_bps:.2f}"
+            if self.jwc_result.ap_credible_interval_upper_bps is not None
+            else f"{self.jwc_result.actuarial_7d_war_risk_ap_bps:.2f}"
+        )
+        ci_xi_low = (
+            f"{self.gpd_result.xi_ci_lower:.4f}"
+            if self.gpd_result.xi_ci_lower is not None
+            else f"{self.gpd_result.shape_xi:.4f}"
+        )
+        ci_xi_high = (
+            f"{self.gpd_result.xi_ci_upper:.4f}"
+            if self.gpd_result.xi_ci_upper is not None
+            else f"{self.gpd_result.shape_xi:.4f}"
+        )
 
         md_lines = [
             f"# PHASE 1 VINTAGE AUDIT: {corridor_name.upper()}",
@@ -318,7 +347,10 @@ class CorridorAuditResult:
                 "| Parameter | Raw Optimization Value | Shrunk Empirical Bayes Estimate | Regularization Impact |",
                 "|---|---|---|---|",
                 f"| **GPD Shape Parameter ($\\xi$)** | `{self.gpd_result.raw_xi:.4f}` | **`{self.gpd_result.shape_xi:.4f}`** | Regularized toward prior $\\xi_0={self.corridor_spec.prior_xi:.2f}$; avoids boundary railing |",
+                f"| **Bootstrap 95% CI ($\\xi$)** | N/A | **`[{ci_xi_low}, {ci_xi_high}]`** | Non-parametric percentile bootstrap confidence interval |",
                 f"| **GPD Scale Parameter ($\\sigma$)** | N/A | **`{self.gpd_result.scale_sigma:.4f}`** | Regularized scale parameter |",
+                f"| **Exceedance Threshold ($u$)** | N/A | **`{self.gpd_result.threshold_u:.4f}`** | Peaks-over-threshold exceedance cutoff |",
+                f"| **Exceedance Count ($N_u$)** | N/A | **`{self.gpd_result.exceedance_count}`** | Number of positive structural shock exceedances |",
                 f"| **Shrinkage Weight ($w$)** | N/A | **`{self.gpd_result.shrinkage_weight_w:.4f}`** | Weight assigned to local data vs prior ($N_u={self.gpd_result.exceedance_count}$) |",
                 f"| **Residual $\\text{{VaR}}_{{0.95}}$** | N/A | **`{self.gpd_result.residual_var_95:.2f}`** | 95th percentile structural residual shock |",
                 f"| **Residual $\\text{{VaR}}_{{0.99}}$** | N/A | **`{self.gpd_result.residual_var_99:.2f}`** | 99th percentile structural residual shock |",
@@ -336,23 +368,20 @@ class CorridorAuditResult:
                 "> [!NOTE]",
                 r"> **Open-Ended Composite Severity Scale**: Reconstructed composite metrics combine the secular+seasonal fairway baseline with the GPD extreme tail residual shock without artificial ceiling clamping, preserving strict mathematical quantile ordering: $\text{CVaR}_{0.99} > \text{VaR}_{0.99} > \text{VaR}_{0.95}$.",
                 "",
-                "#### Table 4C: First-Principles Lloyd's JWC 7-Day AP & Demurrage Pricing",
-                f"Replaces naive multiplier heuristics with first-principles underwriting loss expectation on a **${vessel_usd:,.0f} USD** hull, modeling single-voyage spatial-temporal exposure and hydrodynamic boarding physics:",
+                "#### Table 4C: Explicit First-Principles JWC Underwriting Pricing Chain",
+                f"Replaces naive multiplier heuristics with an explicit 4-step first-principles translation chain on a **${vessel_usd:,.0f} USD** hull:",
                 "",
-                "| Pricing Parameter / Output | Value | Actuarial Definition |",
+                r"$$\mathbf{1. \text{ Incident Frequency}} \longrightarrow \mathbf{2. \text{ Loss Given Event}} \longrightarrow \mathbf{3. \text{ Expected Shortfall (CVaR}_{0.99}\text{)}} \longrightarrow \mathbf{4. \text{ 7-Day AP Credible Interval}}$$",
+                "",
+                "| Translation Chain Layer | Observed Parameter / Metric | Actuarial Underwriting Definition |",
                 "|---|---|---|",
-                f"| **Operational State** | **`{self.corridor_spec.operational_state}`** | Navigation posture (e.g. UNDERWAY transit fairway vs AT_ANCHOR anchorage) |",
-                f"| **Macro Regime Multiplier** | **`{self.jwc_result.regime_multiplier:.4f}x`** | Liquidity friction / port waiting congestion multiplier |",
-                f"| **Calibrated 7-Day Corridor Breach Prob** | **`{self.jwc_result.calibrated_7d_breach_prob * 100:.1f}%`** | Probability of corridor risk exceeding baseline in 7d window |",
-                f"| **Single-Vessel Transit Exposure Factor** | **`{self.jwc_result.vessel_transit_exposure_factor * 100:.1f}%`** | Spatial-temporal exposure of single transiting vessel |",
-                f"| **Hydrodynamic Boarding Modulator** | **`{(0.5 + 0.5 * self.jwc_result.hydro_boarding_feasibility) * 100:.1f}%`** | Modulation from sea-state small-skiff boarding feasibility |",
-                f"| **Effective Single-Vessel Breach Prob** | **`{self.jwc_result.effective_vessel_breach_prob * 100:.2f}%`** | Net single-vessel breach probability over 7-day transit |",
-                f"| **Expected Tail Delay Duration** | **`{self.jwc_result.delay_days:.2f} days`** | Operational delay days given extreme tail breach |",
-                f"| **Tail Demurrage Loss Exposure** | **`${self.jwc_result.cvar_99_demurrage_usd:,.2f} USD`** | Financial demurrage loss at ${self.vessel_spec.daily_demurrage_usd:,.0f}/day charterparty rate |",
-                f"| **Catastrophic Boarding Loss Exposure** | **`${self.jwc_result.catastrophic_tail_loss_usd:,.2f} USD`** | Expected damage/ransom conditional on tail breach |",
-                f"| **Expected 7-Day Tail Loss** | **`${self.jwc_result.expected_7d_tail_loss_usd:,.2f} USD`** | Unconditional actuarial expected loss over 7-day transit |",
-                f"| **Fair Actuarial War-Risk AP** | **`{self.jwc_result.actuarial_7d_war_risk_ap_bps:.2f} bps`** | Fair additional premium rate (1 bps = 0.01% of hull value) |",
-                f"| **Lloyd's JWC Market Benchmark** | **`{self.jwc_result.jwc_market_benchmark_bps:.2f} bps`** | Standard commercial market quote for transit |",
+                f"| **1. Incident Frequency ($p_{{\\text{{vessel}}}}$)** | **`{self.jwc_result.effective_vessel_breach_prob * 100:.2f}%`** | Single-vessel 7-day breach probability ($p_{{7d}} = {self.jwc_result.calibrated_7d_breach_prob * 100:.1f}\\%$, exposure factor = {self.jwc_result.vessel_transit_exposure_factor * 100:.1f}%, hydro feasibility = {self.jwc_result.hydro_boarding_feasibility * 100:.1f}%) |",
+                f"| **2. Expected Loss Given Event** | **`${(self.jwc_result.cvar_99_demurrage_usd + self.jwc_result.catastrophic_tail_loss_usd):,.2f} USD`** | Conditional tail severity: Demurrage (${self.jwc_result.cvar_99_demurrage_usd:,.2f}) + Catastrophic Boarding (${self.jwc_result.catastrophic_tail_loss_usd:,.2f}) |",
+                f"| **3. Expected Shortfall ($\\text{{CVaR}}_{{0.99}}$)** | **`{self.jwc_result.composite_cvar_99:.2f} / 10.0`** | Reconstructed composite corridor tail severity anchor |",
+                f"| **4. Fair Actuarial War-Risk AP (Point)** | **`{self.jwc_result.actuarial_7d_war_risk_ap_bps:.2f} bps`** | Fair additional premium rate (unconditional expected loss: `${self.jwc_result.expected_7d_tail_loss_usd:,.2f} USD`) |",
+                f"| **4. Fair Actuarial War-Risk AP (95% CI)** | **`[{ci_ap_low} bps - {ci_ap_high} bps]`** | Credible interval propagated from GPD shape parameter $\\xi$ bootstrap uncertainty |",
+                "|---|---|---|",
+                f"| **Lloyd's JWC Market Benchmark** | **`{self.jwc_result.jwc_market_benchmark_bps:.2f} bps`** | Standard commercial market quote for transit (reference baseline) |",
                 f"| **Underwriter Commercial Spread** | **`{self.jwc_result.mispricing_spread_bps:+.2f} bps`** | **`${self.jwc_result.per_transit_mispricing_usd:+,.2f} USD`** per transit underpricing hazard |",
                 "",
                 "#### Table 4D: Tactical Hardening Arbitrage (Escort & Anchorage Risk Dividend)",
@@ -657,6 +686,24 @@ class MaritimeRiskEngine:
             float(risk_metrics.get("max_cvar_99", 0.0)),
         )
 
+        # Compute credible interval bounds for composite CVaR_99 from xi bootstrap bounds
+        cvar_lower = composite_cvar
+        cvar_upper = composite_cvar
+        if gpd_res.xi_ci_lower is not None and gpd_res.xi_ci_upper is not None:
+            n_tot = max(len(structural_shocks), 1)
+            p_u = float(gpd_res.exceedance_count / n_tot) if gpd_res.exceedance_count > 0 else 0.05
+            u_val = gpd_res.threshold_u
+            sig_val = gpd_res.scale_sigma
+            eff_cap = float(getattr(self.hyperparams.gpd, "xi_max", self.hyperparams.gpd.shape_cap))
+            _, res_cvar_low = compute_gpd_var_cvar(
+                u_val, gpd_res.xi_ci_lower, sig_val, p_u, alpha=self.hyperparams.gpd.tail_alpha, shape_cap=eff_cap
+            )
+            _, res_cvar_high = compute_gpd_var_cvar(
+                u_val, gpd_res.xi_ci_upper, sig_val, p_u, alpha=self.hyperparams.gpd.tail_alpha, shape_cap=eff_cap
+            )
+            cvar_lower = baseline_val + res_cvar_low
+            cvar_upper = baseline_val + res_cvar_high
+
         # Extract anchorage waiting hours from telemetry for forward-looking regime multiplier
         wait_hours = [
             float(t.anchorage_waiting_hours)
@@ -678,6 +725,8 @@ class MaritimeRiskEngine:
         call_kwargs: dict[str, Any] = {
             "breach_prob_7d": calibrated_p_7d,
             "composite_cvar_99": composite_cvar,
+            "composite_cvar_99_lower": cvar_lower,
+            "composite_cvar_99_upper": cvar_upper,
             "hydro_feasibility": hydro_res.boarding_feasibility,
             "vessel_spec": self.vessel_spec,
             "corridor_spec": self.corridor_spec,
