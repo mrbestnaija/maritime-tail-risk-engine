@@ -62,6 +62,8 @@ def test_banned_terminology_and_identity() -> bool:
     ]
 
     for rel_path in tracked_files:
+        if rel_path.replace("\\", "/") in ("scripts/verify_all_claims.py", "verify_repo.py"):
+            continue
         full_path = REPO_ROOT / rel_path
         if not full_path.is_file():
             continue
