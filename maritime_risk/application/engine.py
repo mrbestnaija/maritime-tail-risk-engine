@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 import hashlib
 import inspect
 import json
+import os
 from pathlib import Path
 from typing import Any, Optional, Sequence
 import numpy as np
@@ -393,7 +394,7 @@ class CorridorAuditResult:
                 f"| **Escorted Underway AP Rate** | **`{self.jwc_result.ap_escorted_bps:.2f} bps`** | Fair AP with dedicated security escort bubble (`${self.jwc_result.ap_escorted_usd:,.2f} USD`) |",
                 f"| **Gross AP Premium Savings** | **`${self.jwc_result.delta_ap_usd:,.2f} USD`** | Direct insurance premium discount achieved via escort |",
                 f"| **Escort Deployment OPEX** | **`${self.jwc_result.escort_opex_cost_usd:,.2f} USD`** | Charterparty security cost at ${self.jwc_result.escort_opex_cost_usd / max(getattr(self.hyperparams.cox, 'voyage_window_days', 7.0), 1.0):,.0f}/day |",
-                f"| **Net Tactical Arbitrage Dividend** | **`${self.jwc_result.dividend_net_usd:+,.2f} USD`** | {'PROFITABLE (Escort pays for itself)' if self.jwc_result.dividend_net_usd > 0 else 'AVOIDED OPEX (Threat benign/suppressed)'} |",
+                f"| **Net Tactical Arbitrage Dividend** | **`${self.jwc_result.dividend_net_usd:+,.2f} USD`** | {'PROFITABLE (Escort pays for itself)' if self.jwc_result.dividend_net_usd > 0 else 'Net OPEX minus premium savings'} |",
                 f"| **Expected Shortfall (CVaR_99) Reduction** | **`${self.jwc_result.delta_reserve_usd:,.2f} USD`** | Conditional tail risk (CVaR_99) exposure reduction |",
                 "",
                 "#### Table 4E: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State",
@@ -401,7 +402,7 @@ class CorridorAuditResult:
                 "",
                 "| SPRT Surveillance Metric | Value | Operational Watch Status |",
                 "|---|---|---|",
-                f"| **Corridor Watch State** | **`{self.sprt_result.state}`** | Deterministic state: `GREEN_BASELINE` \\| `AMBER_CORRIDOR_WATCH` \\| `RED_ESCALATION_BREACH` |",
+                f"| **Corridor Watch State** | **`{self.sprt_result.state}`** | Deterministic state: `H0_NOT_REJECTED` \\| `CONTINUE_SAMPLING` \\| `H1_ACCEPTED` |",
                 f"| **Cumulative Log-Likelihood Ratio** | **`{self.sprt_result.cumulative_llr:+.4f}`** | $S_t = \\sum \\Lambda(y_t)$ |",
                 f"| **Decision Boundaries** | `A = {self.sprt_result.lower_bound_a:.4f}, B = {self.sprt_result.upper_bound_b:+.4f}` | Accept $H_0$ if $S_t \\le A$; Accept $H_1$ if $S_t \\ge B$ |",
                 f"| **Breach Incident Count** | `{self.sprt_result.breach_count} / {self.sprt_result.sample_size} periods` | Observed structural shock exceedances |",
@@ -512,10 +513,6 @@ class MaritimeRiskEngine:
         current_hs: Optional[float] = None,
     ) -> CorridorAuditResult:
         """Evaluate tail risk profile in-memory across incidents and telemetry."""
-        eval_as_of = as_of or datetime.now(timezone.utc)
-        if eval_as_of.tzinfo is None:
-            eval_as_of = eval_as_of.replace(tzinfo=timezone.utc)
-
         effective_incidents = incidents if incidents is not None else ()
         effective_telemetry = telemetry if telemetry is not None else ()
 
@@ -531,6 +528,40 @@ class MaritimeRiskEngine:
         if hasattr(effective_telemetry, "to_dicts"):
             effective_telemetry = effective_telemetry.to_dicts()
         elif hasattr(effective_telemetry, "to_dict"):
+            try:
+                effective_telemetry = effective_telemetry.to_dict(orient="records")
+            except TypeError:
+                effective_telemetry = effective_telemetry.to_dict()
+
+        if as_of is not None:
+            eval_as_of = as_of
+        elif "SOURCE_DATE_EPOCH" in os.environ:
+            try:
+                eval_as_of = datetime.fromtimestamp(
+                    int(os.environ["SOURCE_DATE_EPOCH"]), tz=timezone.utc
+                )
+            except ValueError:
+                eval_as_of = datetime(2026, 11, 8, 0, 0, 0, tzinfo=timezone.utc)
+        else:
+            max_ts = 0.0
+            if effective_incidents:
+                for inc in effective_incidents:
+                    ts = (
+                        inc.get("pub_time") or inc.get("event_time")
+                        if isinstance(inc, dict)
+                        else getattr(inc, "pub_time", None) or getattr(inc, "event_time", None)
+                    )
+                    if isinstance(ts, (int, float)) and ts > max_ts:
+                        max_ts = float(ts)
+                    elif isinstance(ts, datetime) and ts.timestamp() > max_ts:
+                        max_ts = ts.timestamp()
+            if max_ts > 0:
+                eval_as_of = datetime.fromtimestamp(max_ts, tz=timezone.utc)
+            else:
+                eval_as_of = datetime(2026, 11, 8, 0, 0, 0, tzinfo=timezone.utc)
+
+        if eval_as_of.tzinfo is None:
+            eval_as_of = eval_as_of.replace(tzinfo=timezone.utc)
             try:
                 effective_telemetry = effective_telemetry.to_dict(orient="records")
             except TypeError:

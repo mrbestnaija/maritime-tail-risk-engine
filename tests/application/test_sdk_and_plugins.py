@@ -324,6 +324,6 @@ def test_bonny_brass_default_reproduces_exact_baseline() -> None:
     assert res.jwc_result.mispricing_spread_bps == pytest.approx(116.22, abs=0.1)
 
     # SPRT surveillance state
-    assert res.sprt_result.state == "RED_ESCALATION_BREACH"
+    assert res.sprt_result.state == "H1_ACCEPTED"
     assert res.sprt_result.breach_count == 10
     assert res.sprt_result.sample_size == 40

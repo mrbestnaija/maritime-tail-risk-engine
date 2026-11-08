@@ -16,7 +16,7 @@ This document and the underlying risk model outputs are generated strictly for a
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
 - **Operational State**: `UNDERWAY`
 - **Regime Multiplier**: `1.4688x`
-- **Audit Timestamp**: `2026-11-08 19:18:31 UTC`
+- **Audit Timestamp**: `2024-03-11 00:00:00 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
@@ -163,7 +163,7 @@ Evaluates kinetic hazard suppression and Expected Shortfall (CVaR_99) reduction 
 | **Escorted Underway AP Rate** | **`3.16 bps`** | Fair AP with dedicated security escort bubble (`$26,889.52 USD`) |
 | **Gross AP Premium Savings** | **`$62,608.93 USD`** | Direct insurance premium discount achieved via escort |
 | **Escort Deployment OPEX** | **`$175,000.00 USD`** | Charterparty security cost at $25,000/day |
-| **Net Tactical Arbitrage Dividend** | **`$-112,391.07 USD`** | AVOIDED OPEX (Threat benign/suppressed) |
+| **Net Tactical Arbitrage Dividend** | **`$-112,391.07 USD`** | Net OPEX minus premium savings |
 | **Expected Shortfall (CVaR_99) Reduction** | **`$42,627.36 USD`** | Conditional tail risk (CVaR_99) exposure reduction |
 
 #### Table 4E: Wald's Sequential Probability Ratio Test (SPRT) Surveillance State
@@ -171,7 +171,7 @@ Sequential hypothesis testing ($H_0: p_0 = 0.05$ vs $H_1: p_1 = 0.20$):
 
 | SPRT Surveillance Metric | Value | Operational Watch Status |
 |---|---|---|
-| **Corridor Watch State** | **`RED_ESCALATION_BREACH`** | Deterministic state: `GREEN_BASELINE` \| `AMBER_CORRIDOR_WATCH` \| `RED_ESCALATION_BREACH` |
+| **Corridor Watch State** | **`H1_ACCEPTED`** | Deterministic state: `H0_NOT_REJECTED` \| `CONTINUE_SAMPLING` \| `H1_ACCEPTED` |
 | **Cumulative Log-Likelihood Ratio** | **`+8.7074`** | $S_t = \sum \Lambda(y_t)$ |
 | **Decision Boundaries** | `A = -2.2513, B = +2.8904` | Accept $H_0$ if $S_t \le A$; Accept $H_1$ if $S_t \ge B$ |
 | **Breach Incident Count** | `10 / 40 periods` | Observed structural shock exceedances |

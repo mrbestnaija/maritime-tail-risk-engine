@@ -12,7 +12,9 @@ ORCID: 0009-0008-0112-9273
 
 from __future__ import annotations
 
+import argparse
 import datetime
+import os
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +36,7 @@ def run_phase1_audit(
     corridor_id: str = "GOG_BONNY_BRASS_FAIRWAY",
     vessel_profile_id: str = "STANDARD_SUEZMAX_85M",
     current_hs: float | None = None,
+    as_of: datetime.datetime | None = None,
 ) -> dict[str, Any]:
     """Run full Phase 1, 2B & Phase 3 live audit and emit tear sheet & manifest via MaritimeRiskEngine."""
     root_dir = dataset_path.parent.parent
@@ -81,6 +84,32 @@ def run_phase1_audit(
         incident_adapter.calculate_publication_lags(live_incidents, in_hours=True)
         incident_adapter.persist_incidents(live_incidents)
 
+    # Deterministic audit timestamp (reproducible build compliance)
+    if as_of is not None:
+        frozen_as_of = as_of
+    elif "SOURCE_DATE_EPOCH" in os.environ:
+        try:
+            frozen_as_of = datetime.datetime.fromtimestamp(
+                int(os.environ["SOURCE_DATE_EPOCH"]), tz=datetime.timezone.utc
+            )
+        except ValueError:
+            frozen_as_of = None
+    else:
+        frozen_as_of = None
+
+    if frozen_as_of is None:
+        max_ts = 0.0
+        for inc in raw_incidents:
+            ts = getattr(inc, "pub_time", None) or getattr(inc, "event_time", None)
+            if isinstance(ts, (int, float)) and ts > max_ts:
+                max_ts = float(ts)
+            elif isinstance(ts, datetime.datetime) and ts.timestamp() > max_ts:
+                max_ts = ts.timestamp()
+        if max_ts > 0:
+            frozen_as_of = datetime.datetime.fromtimestamp(max_ts, tz=datetime.timezone.utc)
+        else:
+            frozen_as_of = datetime.datetime(2026, 11, 8, 0, 0, 0, tzinfo=datetime.timezone.utc)
+
     # 6. Execute evaluation via MaritimeRiskEngine with live smoothed Hs
     if config_dir.exists():
         engine = MaritimeRiskEngine.from_config_files(
@@ -94,6 +123,7 @@ def run_phase1_audit(
     result = engine.evaluate(
         incidents=raw_incidents,
         telemetry=telemetry_records,
+        as_of=frozen_as_of,
         dataset_sha256=dataset_sha256,
         telemetry_sha256=telemetry_sha256,
         current_hs=current_hs,
@@ -103,7 +133,8 @@ def run_phase1_audit(
     manifest_builder = AuditManifestBuilder(root_dir)
     manifest_file = manifest_path or (root_dir / "PHASE1_AUDIT_MANIFEST.json")
     manifest_builder.write_manifest_file(
-        output_rel_path=str(manifest_file.name),
+        output_rel_path=manifest_file,
+        as_of=frozen_as_of,
         gpd_result=result.gpd_result,
         jwc_result=result.jwc_result,
         sprt_result=result.sprt_result,
@@ -167,14 +198,32 @@ def run_phase1_audit(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate Maritime Tail Risk Tear Sheet and Manifest.")
+    parser.add_argument("--output", "-o", type=Path, default=None, help="Output Markdown tear sheet path")
+    parser.add_argument("--manifest", "-m", type=Path, default=None, help="Output JSON audit manifest path")
+    parser.add_argument("--corridor-id", type=str, default="GOG_BONNY_BRASS_FAIRWAY", help="Corridor ID")
+    parser.add_argument("--vessel-profile-id", type=str, default="STANDARD_SUEZMAX_85M", help="Vessel profile ID")
+    parser.add_argument("--as-of", type=str, default=None, help="Explicit ISO timestamp for reproducible execution")
+    args = parser.parse_args()
+
     base_dir = Path(__file__).resolve().parent
     dataset_file = base_dir / "data" / "sample_gog_osint_vintage.csv"
     telemetry_file = base_dir / "data" / "gog_bonny_brass_civilian_telemetry.json"
-    output_file = base_dir / "PHASE1_VINTAGE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md"
-    manifest_file = base_dir / "PHASE1_AUDIT_MANIFEST.json"
+    output_file = args.output or (base_dir / "PHASE1_VINTAGE_AUDIT_GOG_BONNY_BRASS_FAIRWAY.md")
+    manifest_file = args.manifest or (base_dir / "PHASE1_AUDIT_MANIFEST.json")
+
+    explicit_as_of = None
+    if args.as_of:
+        explicit_as_of = datetime.datetime.fromisoformat(args.as_of)
 
     res = run_phase1_audit(
-        dataset_file, output_file, telemetry_path=telemetry_file, manifest_path=manifest_file
+        dataset_file,
+        output_file,
+        telemetry_path=telemetry_file,
+        manifest_path=manifest_file,
+        corridor_id=args.corridor_id,
+        vessel_profile_id=args.vessel_profile_id,
+        as_of=explicit_as_of,
     )
     gpd = res["gpd_result"]
     jwc = res["jwc_result"]

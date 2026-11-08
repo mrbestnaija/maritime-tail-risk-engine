@@ -203,21 +203,21 @@ def test_jwc_7day_war_risk_pricer_calibrated_institutional_band():
 
 def test_sprt_surveillance_gates_states():
     """Verify SPRT correctly discriminates baseline from escalation breach."""
-    # Sustained baseline (zeros): must reach GREEN_BASELINE
+    # Sustained baseline (zeros): must reach H0_NOT_REJECTED
     benign_series = [0] * 25
     res_green = evaluate_sprt_surveillance_gate(benign_series, p0=0.05, p1=0.20)
-    assert res_green.state == "GREEN_BASELINE"
+    assert res_green.state == "H0_NOT_REJECTED"
     assert res_green.cumulative_llr <= res_green.lower_bound_a
 
-    # Active surge wave (consecutive ones): must trigger RED_ESCALATION_BREACH
+    # Active surge wave (consecutive ones): must trigger H1_ACCEPTED
     surge_series = [1] * 5
     res_red = evaluate_sprt_surveillance_gate(surge_series, p0=0.05, p1=0.20)
-    assert res_red.state == "RED_ESCALATION_BREACH"
+    assert res_red.state == "H1_ACCEPTED"
     assert res_red.cumulative_llr >= res_red.upper_bound_b
 
-    # Ambiguous intermediate: AMBER_CORRIDOR_WATCH
+    # Ambiguous intermediate: CONTINUE_SAMPLING
     res_amber = evaluate_sprt_surveillance_gate([1, 0, 0, 1, 0], p0=0.05, p1=0.20)
-    assert res_amber.state == "AMBER_CORRIDOR_WATCH"
+    assert res_amber.state == "CONTINUE_SAMPLING"
 
 
 # ==============================================================================

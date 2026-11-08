@@ -10,6 +10,7 @@ Programmatically verifies all operational, identity, mathematical, and architect
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sqlite3
@@ -198,6 +199,7 @@ def test_live_execution_and_tear_sheet() -> bool:
         ("4. 7-Day Fair Actuarial AP: 131.22 bps [92.29 bps - 200.46 bps]", "7-Day AP Credible Interval"),
         ("Reference Market Quote: 15.00 bps", "Lloyd's JWC market quote benchmark"),
         ("Underwriter Spread: +116.22 bps ($+987,860.90 USD)", "Underwriter spread"),
+        ("SPRT State: H1_ACCEPTED", "SPRT statistical surveillance state (H1_ACCEPTED)"),
     ]
 
     for expected, desc in assertions:
@@ -216,6 +218,8 @@ def test_live_execution_and_tear_sheet() -> bool:
     md_assertions = [
         ("`$62,608.93 USD`", "Gross AP Premium Savings ($62,608.93 USD)"),
         ("`$-112,391.07 USD`", "Net Tactical Arbitrage Dividend ($-112,391.07 USD)"),
+        ("Net OPEX minus premium savings", "Net Tactical Arbitrage Dividend caption"),
+        ("`H1_ACCEPTED`", "SPRT watch state in tearsheet table"),
         ("`$42,627.36 USD`", "Expected Shortfall (CVaR_99) Reduction ($42,627.36 USD)"),
         ("Maritime domain researcher with 20+ years of operational experience", "Standardized Author Attribution"),
         ("0009-0008-0112-9273", "Author ORCID"),
@@ -336,6 +340,81 @@ def test_sqlite_temporal_and_physics_constraints() -> bool:
     return True
 
 
+def test_artifact_determinism() -> bool:
+    print("\n" + "=" * 80)
+    print("VERIFY: 6. Gate 6: Artifact Determinism & Bit-for-Bit Reproducibility")
+    print("=" * 80)
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        md1 = tmp_path / "run1.md"
+        json1 = tmp_path / "run1.json"
+        md2 = tmp_path / "run2.md"
+        json2 = tmp_path / "run2.json"
+
+        # Execute Run 1
+        res1 = subprocess.run(
+            [
+                sys.executable,
+                str(REPO_ROOT / "generate_tear_sheet.py"),
+                "--output",
+                str(md1),
+                "--manifest",
+                str(json1),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=REPO_ROOT,
+        )
+        if res1.returncode != 0:
+            print(f"[FAIL] Run 1 failed with code {res1.returncode}: {res1.stderr}")
+            return False
+
+        # Execute Run 2
+        res2 = subprocess.run(
+            [
+                sys.executable,
+                str(REPO_ROOT / "generate_tear_sheet.py"),
+                "--output",
+                str(md2),
+                "--manifest",
+                str(json2),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=REPO_ROOT,
+        )
+        if res2.returncode != 0:
+            print(f"[FAIL] Run 2 failed with code {res2.returncode}: {res2.stderr}")
+            return False
+
+        if not md1.exists() or not md2.exists():
+            print("[FAIL] Output markdown file missing in one of the test runs.")
+            return False
+
+        if not json1.exists() or not json2.exists():
+            print("[FAIL] Output manifest file missing in one of the test runs.")
+            return False
+
+        sha_md1 = hashlib.sha256(md1.read_bytes()).hexdigest()
+        sha_md2 = hashlib.sha256(md2.read_bytes()).hexdigest()
+        sha_json1 = hashlib.sha256(json1.read_bytes()).hexdigest()
+        sha_json2 = hashlib.sha256(json2.read_bytes()).hexdigest()
+
+        if sha_md1 != sha_md2:
+            print(f"[FAIL] Markdown tearsheet non-deterministic: run1={sha_md1} != run2={sha_md2}")
+            return False
+        print(f"[PASS] Markdown tearsheet bit-for-bit identical across runs (SHA-256: {sha_md1[:16]}...)")
+
+        if sha_json1 != sha_json2:
+            print(f"[FAIL] JSON manifest non-deterministic: run1={sha_json1} != run2={sha_json2}")
+            return False
+        print(f"[PASS] JSON manifest bit-for-bit identical across runs (SHA-256: {sha_json1[:16]}...)")
+
+    return True
+
+
 def main():
     start_total = time.perf_counter()
     print("=" * 80)
@@ -349,6 +428,7 @@ def main():
         ("Complete Pytest Suite (192 Items)", test_pytest_suite),
         ("Live E2E Execution & Dividend Verification", test_live_execution_and_tear_sheet),
         ("SQLite Temporal & Physics Constraints", test_sqlite_temporal_and_physics_constraints),
+        ("Gate 6: Artifact Determinism & Bit-for-Bit Reproducibility", test_artifact_determinism),
     ]
 
     results = []

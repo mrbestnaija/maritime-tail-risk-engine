@@ -16,6 +16,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -47,6 +48,9 @@ class AuditManifestBuilder:
         sprt_result: Any = None,
         hydro_result: Any = None,
         tri_state_verification: Dict[str, str] | None = None,
+        as_of: datetime.datetime | str | None = None,
+        timestamp: datetime.datetime | str | None = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """Generate audit manifest dictionary."""
         incident_file = self.root_dir / incident_dataset_rel_path
@@ -65,7 +69,15 @@ class AuditManifestBuilder:
                 "longitude_min": 6.5,
                 "longitude_max": 7.5,
             },
-            "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp_utc": (
+                (as_of.isoformat() if isinstance(as_of, datetime.datetime) else str(as_of))
+                if as_of is not None
+                else (timestamp.isoformat() if isinstance(timestamp, datetime.datetime) else str(timestamp))
+                if timestamp is not None
+                else (datetime.datetime.fromtimestamp(int(os.environ["SOURCE_DATE_EPOCH"]), tz=datetime.timezone.utc).isoformat()
+                      if "SOURCE_DATE_EPOCH" in os.environ and os.environ["SOURCE_DATE_EPOCH"].isdigit()
+                      else "2026-11-08T00:00:00+00:00")
+            ),
             "lineage_hashes": {
                 "incident_dataset_sha256": incident_hash,
                 "civilian_telemetry_dataset_sha256": telemetry_hash,
@@ -149,11 +161,16 @@ class AuditManifestBuilder:
 
     def write_manifest_file(
         self,
-        output_rel_path: str = "PHASE1_AUDIT_MANIFEST.json",
+        output_rel_path: str | Path = "PHASE1_AUDIT_MANIFEST.json",
         **kwargs: Any,
     ) -> Path:
         """Write manifest dictionary to output JSON file."""
         manifest = self.generate_manifest(**kwargs)
-        out_file = self.root_dir / output_rel_path
+        p = Path(output_rel_path)
+        if p.is_absolute():
+            out_file = p
+        else:
+            out_file = self.root_dir / p
+        out_file.parent.mkdir(parents=True, exist_ok=True)
         out_file.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         return out_file

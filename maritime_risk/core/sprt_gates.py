@@ -4,9 +4,9 @@ Provides statistically optimal, minimal-sample surveillance gates for corridor r
 - H_0: Fairway risk remains at benign baseline (p_0).
 - H_1: Fairway risk has surged into an active attack wave (p_1).
 - Error boundaries (alpha, beta):
-    A = ln(beta / (1 - alpha))  [Accept H_0 -> GREEN_BASELINE]
-    B = ln((1 - beta) / alpha)  [Accept H_1 -> RED_ESCALATION_BREACH]
-    Intermediate -> AMBER_CORRIDOR_WATCH
+    A = ln(beta / (1 - alpha))  [Accept H_0 -> H0_NOT_REJECTED]
+    B = ln((1 - beta) / alpha)  [Accept H_1 -> H1_ACCEPTED]
+    Intermediate -> CONTINUE_SAMPLING
 
 Pure domain math: ZERO I/O, ZERO PRINT, pure Python/math.
 """
@@ -19,7 +19,7 @@ from typing import Literal, Optional, Sequence
 
 from .specs import SPRTSpec
 
-SPRTState = Literal["GREEN_BASELINE", "AMBER_CORRIDOR_WATCH", "RED_ESCALATION_BREACH"]
+SPRTState = Literal["H0_NOT_REJECTED", "CONTINUE_SAMPLING", "H1_ACCEPTED"]
 
 
 @dataclass(frozen=True)
@@ -86,7 +86,7 @@ def evaluate_sprt_surveillance_gate(
             cumulative_llr=0.0,
             lower_bound_a=a_bound,
             upper_bound_b=b_bound,
-            state="GREEN_BASELINE",
+            state="H0_NOT_REJECTED",
             sample_size=0,
             breach_count=0,
             p0=p0_val,
@@ -106,11 +106,11 @@ def evaluate_sprt_surveillance_gate(
         llr += log_ratio_1 if y == 1 else log_ratio_0
 
     if llr <= a_bound:
-        state: SPRTState = "GREEN_BASELINE"
+        state: SPRTState = "H0_NOT_REJECTED"
     elif llr >= b_bound:
-        state = "RED_ESCALATION_BREACH"
+        state = "H1_ACCEPTED"
     else:
-        state = "AMBER_CORRIDOR_WATCH"
+        state = "CONTINUE_SAMPLING"
 
     return SPRTGateResult(
         cumulative_llr=float(llr),

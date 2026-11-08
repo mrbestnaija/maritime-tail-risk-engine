@@ -8,7 +8,7 @@
     "longitude_min": 6.5,
     "longitude_max": 7.5
   },
-  "timestamp_utc": "2026-11-08T19:18:31.117219+00:00",
+  "timestamp_utc": "2024-03-11T00:00:00+00:00",
   "lineage_hashes": {
     "incident_dataset_sha256": "cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c",
     "civilian_telemetry_dataset_sha256": "c3685e086d228af1f3d0e44314f3c50e5af000406c0d55559d68d77c95157db7",
@@ -57,7 +57,7 @@
     "composite_hazard_score": 1.792899528577662
   },
   "sprt_surveillance": {
-    "state": "RED_ESCALATION_BREACH",
+    "state": "H1_ACCEPTED",
     "cumulative_llr": 8.707435903399132,
     "lower_bound_a": -2.251291798606495,
     "upper_bound_b": 2.8903717578961645,
