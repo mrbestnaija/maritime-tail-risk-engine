@@ -377,7 +377,7 @@ class CorridorAuditResult:
                 "|---|---|---|",
                 f"| **1. Incident Frequency ($p_{{\\text{{vessel}}}}$)** | **`{self.jwc_result.effective_vessel_breach_prob * 100:.2f}%`** | Single-vessel 7-day breach probability ($p_{{7d}} = {self.jwc_result.calibrated_7d_breach_prob * 100:.1f}\\%$, exposure factor = {self.jwc_result.vessel_transit_exposure_factor * 100:.1f}%, hydro feasibility = {self.jwc_result.hydro_boarding_feasibility * 100:.1f}%) |",
                 f"| **2. Expected Loss Given Event** | **`${(self.jwc_result.cvar_99_demurrage_usd + self.jwc_result.catastrophic_tail_loss_usd):,.2f} USD`** | Conditional tail severity: Demurrage (${self.jwc_result.cvar_99_demurrage_usd:,.2f}) + Catastrophic Boarding (${self.jwc_result.catastrophic_tail_loss_usd:,.2f}) |",
-                f"| **3. Expected Shortfall ($\\text{{CVaR}}_{{0.99}}$)** | **`{self.jwc_result.composite_cvar_99:.2f} / 10.0`** | Reconstructed composite corridor tail severity anchor |",
+                f"| **3. Expected Shortfall ($\\text{{CVaR}}_{{0.99}}$)** | **`{self.jwc_result.composite_cvar_99:.2f} / 10.0`** | Reconstructed composite corridor tail severity anchor (${vessel_usd / 1e6:.0f}M H&M Insured Value basis) |",
                 f"| **4. Fair Actuarial War-Risk AP (Point)** | **`{self.jwc_result.actuarial_7d_war_risk_ap_bps:.2f} bps`** | Fair additional premium rate (unconditional expected loss: `${self.jwc_result.expected_7d_tail_loss_usd:,.2f} USD`) |",
                 f"| **4. Fair Actuarial War-Risk AP (95% CI)** | **`[{ci_ap_low} bps - {ci_ap_high} bps]`** | Credible interval propagated from GPD shape parameter $\\xi$ bootstrap uncertainty |",
                 "|---|---|---|",

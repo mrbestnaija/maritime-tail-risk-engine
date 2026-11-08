@@ -193,7 +193,7 @@ if __name__ == "__main__":
     print(f"Explicit Pricing Chain:")
     print(f"  1. Incident Frequency: {jwc.effective_vessel_breach_prob * 100:.2f}% (effective single-vessel breach prob)")
     print(f"  2. Expected Loss Given Event: ${(jwc.cvar_99_demurrage_usd + jwc.catastrophic_tail_loss_usd):,.2f} USD")
-    print(f"  3. Expected Shortfall (CVaR_0.99): {jwc.composite_cvar_99:.2f} / 10.0")
+    print(f"  3. Expected Shortfall (CVaR_0.99): {jwc.composite_cvar_99:.2f} / 10.0 ($100M H&M Insured Value basis)")
     print(f"  4. 7-Day Fair Actuarial AP: {jwc.actuarial_7d_war_risk_ap_bps:.2f} bps [{ci_low_str} bps - {ci_high_str} bps]")
     print(f"  Reference Market Quote: {jwc.jwc_market_benchmark_bps:.2f} bps (Lloyd's JWC Benchmark)")
     print(f"  Underwriter Spread: {jwc.mispricing_spread_bps:+.2f} bps (${jwc.per_transit_mispricing_usd:+,.2f} USD)")

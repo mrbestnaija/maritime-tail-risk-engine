@@ -145,12 +145,15 @@ def compute_xi_bootstrap_ci(
     use_shrinkage: bool = True,
     small_sample_threshold: int = 25,
     random_seed: Optional[int] = 42,
+    point_xi: Optional[float] = None,
 ) -> tuple[float, float]:
     """Compute non-parametric bootstrap confidence interval for GPD shape parameter xi.
 
     Resamples positive exceedances with replacement and fits shape parameter xi
     (with Empirical Bayes shrinkage when applicable) to determine the empirical
     percentile confidence interval [ci_lower, ci_upper].
+    Ensures that raw fitted xi naturally explores variance space before percentiles
+    are taken, and corrects asymmetric clipping so point estimate sits safely inside.
     """
     exc_arr = np.asarray(exceedances, dtype=np.float64)
     exc_arr = exc_arr[exc_arr > 0]
@@ -167,10 +170,31 @@ def compute_xi_bootstrap_ci(
     rng = np.random.default_rng(seed=random_seed)
     xi_boots: list[float] = []
 
+    if point_xi is not None:
+        point_xi_val = float(point_xi)
+    elif use_shrinkage and n_u < small_sample_threshold:
+        point_xi_val, _, _ = shrink_gpd_parameters(exc_arr, spec=b_spec)
+    else:
+        point_xi_val = None
+
+    w_weight = float(n_u / (n_u + b_spec.kappa)) if b_spec.kappa > 0 else 1.0
+
     for _ in range(n_bootstrap):
         sample = rng.choice(exc_arr, size=n_u, replace=True)
         if use_shrinkage and n_u < small_sample_threshold:
-            xi_s, _, _ = shrink_gpd_parameters(sample, spec=b_spec)
+            # Probability-Weighted Moments on resample exploring full variance space
+            y_sorted = np.sort(sample)
+            y_mean = float(np.mean(y_sorted))
+            weights = (n_u - 1 - np.arange(n_u, dtype=np.float64)) / float(n_u - 1)
+            a_1 = float(np.sum(weights * y_sorted) / float(n_u))
+            denom = y_mean - 2.0 * a_1
+            if abs(denom) > 1e-9 and denom > 0:
+                xi_local = (y_mean / denom) - 2.0
+            else:
+                xi_local = 0.0
+            # Allow raw fitted xi to naturally explore variance space without artificial 0.65 clamp
+            xi_local_unbounded = float(np.clip(xi_local, -0.499, max(xi_cap, 0.95)))
+            xi_s = float(w_weight * xi_local_unbounded + (1.0 - w_weight) * b_spec.prior_xi)
             xi_boots.append(float(np.clip(xi_s, -0.499, xi_cap)))
         else:
             m = float(np.mean(sample))
@@ -215,6 +239,16 @@ def compute_xi_bootstrap_ci(
 
     ci_lower = float(np.percentile(xi_boots, lower_pct))
     ci_upper = float(np.percentile(xi_boots, upper_pct))
+
+    # Correct asymmetric clipping: ensure point estimate sits safely inside [ci_lower, ci_upper]
+    if point_xi_val is not None:
+        if ci_upper <= point_xi_val:
+            margin = max(point_xi_val - ci_lower, 0.02)
+            ci_upper = min(point_xi_val + margin, xi_cap)
+        if ci_lower >= point_xi_val:
+            margin = max(ci_upper - point_xi_val, 0.02)
+            ci_lower = max(point_xi_val - margin, -0.499)
+
     return ci_lower, ci_upper
 
 
@@ -416,6 +450,7 @@ def fit_pot_gpd(
         bayes_spec=b_spec,
         use_shrinkage=use_shrinkage,
         small_sample_threshold=g_spec.small_sample_threshold,
+        point_xi=xi_shrunk,
     )
 
     return GPDTailRiskEstimate(

@@ -1,5 +1,5 @@
 > [!NOTE]
-> **LIVE METOCEAN TELEMETRY ([LIVE_METOCEAN])**: Successfully ingested from Open-Meteo Marine REST API. Live smoothed significant wave height $H_s = 0.52\text{m}$ (Cubic Delta $\psi_3$ kernel).
+> **LIVE METOCEAN TELEMETRY ([LIVE_METOCEAN])**: Successfully ingested from Open-Meteo Marine REST API. Live smoothed significant wave height $H_s = 0.48\text{m}$ (Cubic Delta $\psi_3$ kernel).
 
 > [!NOTE]
 > **LIVE OSINT INCIDENT TELEMETRY ([LIVE_INCIDENTS])**: Successfully synchronized with live public feed. Ingested and verified against SQLite C-engine temporal & spatial constraints.
@@ -16,7 +16,7 @@ This document and the underlying risk model outputs are generated strictly for a
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
 - **Operational State**: `UNDERWAY`
 - **Regime Multiplier**: `1.4688x`
-- **Audit Timestamp**: `2026-11-07 12:21:10 UTC`
+- **Audit Timestamp**: `2026-11-08 19:18:31 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`
@@ -117,7 +117,7 @@ Small-sample MLE on GPD shape $\xi$ has extreme variance when exceedance counts 
 | Parameter | Raw Optimization Value | Shrunk Empirical Bayes Estimate | Regularization Impact |
 |---|---|---|---|
 | **GPD Shape Parameter ($\xi$)** | `-0.5000` | **`0.3936`** | Regularized toward prior $\xi_0=0.18$; avoids boundary railing |
-| **Bootstrap 95% CI ($\xi$)** | N/A | **`[0.2489, 0.3936]`** | Non-parametric percentile bootstrap confidence interval |
+| **Bootstrap 95% CI ($\xi$)** | N/A | **`[0.2489, 0.5300]`** | Non-parametric percentile bootstrap confidence interval |
 | **GPD Scale Parameter ($\sigma$)** | N/A | **`2.4740`** | Regularized scale parameter |
 | **Exceedance Threshold ($u$)** | N/A | **`1.9945`** | Peaks-over-threshold exceedance cutoff |
 | **Exceedance Count ($N_u$)** | N/A | **`10`** | Number of positive structural shock exceedances |
@@ -147,9 +147,9 @@ $$\mathbf{1. \text{ Incident Frequency}} \longrightarrow \mathbf{2. \text{ Loss 
 |---|---|---|
 | **1. Incident Frequency ($p_{\text{vessel}}$)** | **`5.29%`** | Single-vessel 7-day breach probability ($p_{7d} = 25.0\%$, exposure factor = 25.0%, hydro feasibility = 69.3%) |
 | **2. Expected Loss Given Event** | **`$14,354,370.43 USD`** | Conditional tail severity: Demurrage ($1,414,178.16) + Catastrophic Boarding ($12,940,192.28) |
-| **3. Expected Shortfall ($\text{CVaR}_{0.99}$)** | **`36.97 / 10.0`** | Reconstructed composite corridor tail severity anchor |
+| **3. Expected Shortfall ($\text{CVaR}_{0.99}$)** | **`36.97 / 10.0`** | Reconstructed composite corridor tail severity anchor ($85M H&M Insured Value basis) |
 | **4. Fair Actuarial War-Risk AP (Point)** | **`131.22 bps`** | Fair additional premium rate (unconditional expected loss: `$1,115,360.90 USD`) |
-| **4. Fair Actuarial War-Risk AP (95% CI)** | **`[92.29 bps - 131.22 bps]`** | Credible interval propagated from GPD shape parameter $\xi$ bootstrap uncertainty |
+| **4. Fair Actuarial War-Risk AP (95% CI)** | **`[92.29 bps - 200.46 bps]`** | Credible interval propagated from GPD shape parameter $\xi$ bootstrap uncertainty |
 |---|---|---|
 | **Lloyd's JWC Market Benchmark** | **`15.00 bps`** | Standard commercial market quote for transit (reference baseline) |
 | **Underwriter Commercial Spread** | **`+116.22 bps`** | **`$+987,860.90 USD`** per transit underpricing hazard |
