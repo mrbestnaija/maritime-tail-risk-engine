@@ -1,5 +1,5 @@
 > [!NOTE]
-> **LIVE METOCEAN TELEMETRY ([LIVE_METOCEAN])**: Successfully ingested from Open-Meteo Marine REST API. Live smoothed significant wave height $H_s = 0.59\text{m}$ (Cubic Delta $\psi_3$ kernel).
+> **LIVE METOCEAN TELEMETRY ([LIVE_METOCEAN])**: Successfully ingested from Open-Meteo Marine REST API. Live smoothed significant wave height $H_s = 0.52\text{m}$ (Cubic Delta $\psi_3$ kernel).
 
 > [!NOTE]
 > **LIVE OSINT INCIDENT TELEMETRY ([LIVE_INCIDENTS])**: Successfully synchronized with live public feed. Ingested and verified against SQLite C-engine temporal & spatial constraints.
@@ -16,7 +16,7 @@ This document and the underlying risk model outputs are generated strictly for a
 - **Target Geographic Fairway**: Gulf of Guinea (GoG) - Bonny / Brass Fairway (`4.0°N - 4.5°N, 6.5°E - 7.5°E`)
 - **Operational State**: `UNDERWAY`
 - **Regime Multiplier**: `1.4688x`
-- **Audit Timestamp**: `2026-11-06 06:37:13 UTC`
+- **Audit Timestamp**: `2026-11-07 12:21:10 UTC`
 - **Architecture**: Clean Architecture / Modular Monolith (Core Domain Layer Isolation)
 - **Verification Paradigm**: Python-Native Verification (Pydantic + SQLite CHECK Constraints + Hypothesis Fuzzing + Tri-State CLI)
 - **Dataset SHA-256 Lineage Hash**: `cac4ca9116cbb0f0038e4df511092f2a1025eabc840a0a5447f97849f88af39c`

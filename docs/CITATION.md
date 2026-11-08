@@ -1,4 +1,4 @@
-# Academic Citation & Attribution Guide: Maritime Tail Risk Engine
+        # Academic Citation & Attribution Guide: Maritime Tail Risk Engine
 
 If you utilize `maritime-tail-risk-engine`, its bi-temporal reporting-lag formulation, its Multivariate Singular Spectrum Analysis (MSSA) seasonal filter, or its Gulf of Guinea civilian telemetry benchmark dataset in academic papers, conference proceedings, or industry actuarial reports, please cite this work using the metadata below.
 
